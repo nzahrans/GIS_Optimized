@@ -22,22 +22,33 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    final email = _emailController.text.trim();
+    final input = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
+    if (input.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email dan password tidak boleh kosong")),
+        const SnackBar(content: Text("Input tidak boleh kosong")),
       );
       return;
     }
 
+    // Konversi NIK menjadi virtual email jika diinput 16 digit angka
+    String finalEmail = input;
+    final isNik = RegExp(r'^\d{16}$').hasMatch(input);
+    if (isNik) {
+      finalEmail = '$input@warga.sigbansos.com';
+    }
+
     final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.signIn(email, password);
+    final success = await authProvider.signIn(finalEmail, password);
 
     if (mounted) {
       if (success) {
-        Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        if (finalEmail.endsWith('@warga.sigbansos.com')) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(authProvider.errorMessage ?? "Login gagal")),
@@ -98,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        "Log In Admin",
+                        "Log In Sistem",
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -107,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        "Kelola data bantuan sosial Tegalsari",
+                        "Masuk sebagai Admin RT atau Warga",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
@@ -117,10 +128,10 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 32),
                       TextField(
                         controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
+                        keyboardType: TextInputType.text,
                         decoration: const InputDecoration(
-                          labelText: "Email",
-                          prefixIcon: Icon(Icons.email_outlined),
+                          labelText: "Email Admin atau NIK Warga",
+                          prefixIcon: Icon(Icons.person_outline),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -128,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: "Password",
+                          labelText: "Password (Default: 123456)",
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),

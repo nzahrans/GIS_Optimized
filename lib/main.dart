@@ -34,8 +34,36 @@ class SIGBansosApp extends StatelessWidget {
         title: 'GIS Bansos Tegalsari',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF1E3A8A),
+            primary: const Color(0xFF1E3A8A),
+            secondary: const Color(0xFFF59E0B),
+            background: const Color(0xFFF8FAFC),
+          ),
           useMaterial3: true,
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: const Color(0xFFF1F5F9),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.8),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+            floatingLabelStyle: const TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.w600),
+          ),
         ),
         initialRoute: '/',
         routes: {

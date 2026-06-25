@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/warga.dart';
 import '../services/firestore_service.dart';
@@ -59,13 +61,41 @@ class WargaProvider extends ChangeNotifier {
     }
   }
 
-  /// Tambah data warga baru
+  /// Tambah data warga baru dan buat akun Firebase Auth secara otomatis
   Future<bool> addWarga(Warga warga, File? fotoFile) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      // 1. Pendaftaran akun warga secara otomatis via Secondary App
+      final String virtualEmail = '${warga.nik.trim()}@warga.sigbansos.com';
+      final String virtualPassword = '123456';
+
+      FirebaseApp? tempApp;
+      try {
+        tempApp = await Firebase.initializeApp(
+          name: 'TempWargaAuthApp',
+          options: Firebase.app().options,
+        );
+        final FirebaseAuth tempAuth = FirebaseAuth.instanceFor(app: tempApp);
+        await tempAuth.createUserWithEmailAndPassword(
+          email: virtualEmail,
+          password: virtualPassword,
+        );
+      } on FirebaseAuthException catch (authError) {
+        if (authError.code != 'email-already-in-use') {
+          rethrow;
+        }
+      } catch (authError) {
+        debugPrint('Autocreate Warga Auth Warning: $authError');
+      } finally {
+        if (tempApp != null) {
+          await tempApp.delete();
+        }
+      }
+
+      // 2. Upload Foto Rumah ke Firebase Storage
       String fotoUrl = warga.fotoUrl;
       if (fotoFile != null) {
         final uploadedUrl = await uploadFotoRumah(fotoFile, warga.nik);
@@ -74,6 +104,7 @@ class WargaProvider extends ChangeNotifier {
         }
       }
 
+      // 3. Simpan data warga ke Firestore
       final data = warga.copyWith(fotoUrl: fotoUrl).toMap();
       data['tanggal_input'] = FieldValue.serverTimestamp();
 
@@ -97,6 +128,34 @@ class WargaProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Pendaftaran akun warga secara otomatis via Secondary App jika belum ada
+      final String virtualEmail = '${warga.nik.trim()}@warga.sigbansos.com';
+      final String virtualPassword = '123456';
+
+      FirebaseApp? tempApp;
+      try {
+        tempApp = await Firebase.initializeApp(
+          name: 'TempWargaAuthAppUpdate',
+          options: Firebase.app().options,
+        );
+        final FirebaseAuth tempAuth = FirebaseAuth.instanceFor(app: tempApp);
+        await tempAuth.createUserWithEmailAndPassword(
+          email: virtualEmail,
+          password: virtualPassword,
+        );
+      } on FirebaseAuthException catch (authError) {
+        if (authError.code != 'email-already-in-use') {
+          rethrow;
+        }
+      } catch (authError) {
+        debugPrint('Autocreate Warga Auth Warning (Update): $authError');
+      } finally {
+        if (tempApp != null) {
+          await tempApp.delete();
+        }
+      }
+
+      // Upload Foto Rumah ke Firebase Storage
       String fotoUrl = warga.fotoUrl;
       if (fotoFile != null) {
         final uploadedUrl = await uploadFotoRumah(fotoFile, warga.nik);

@@ -19,7 +19,12 @@ class _SplashScreenState extends State<SplashScreen> {
       // Mengarahkan halaman berdasarkan status autentikasi dari AuthProvider
       final authProvider = context.read<AuthProvider>();
       if (authProvider.isLoggedIn) {
-        Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        final email = authProvider.user?.email ?? '';
+        if (email.endsWith('@warga.sigbansos.com')) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        }
       } else {
         Navigator.pushReplacementNamed(context, '/home');
       }
