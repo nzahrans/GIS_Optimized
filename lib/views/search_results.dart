@@ -36,10 +36,10 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFF090D16),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: const Color(0xFF090D16),
+        foregroundColor: Colors.white,
         elevation: 0,
         titleSpacing: 0,
         title: Padding(
@@ -48,13 +48,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             height: 40,
             child: TextField(
               controller: _searchController,
+              style: const TextStyle(color: Colors.white),
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
                 hintText: "Cari warga...",
-                hintStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
                 filled: true,
-                fillColor: const Color(0xFFF1F5F9),
-                prefixIcon: Icon(Icons.search, color: Colors.grey[500], size: 18),
+                fillColor: const Color(0xFF1E293B),
+                prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.6), size: 18),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? GestureDetector(
                         onTap: () {
@@ -63,7 +64,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                             _currentQuery = "";
                           });
                         },
-                        child: Icon(Icons.clear, color: Colors.grey[500], size: 18),
+                        child: Icon(Icons.clear, color: Colors.white.withOpacity(0.6), size: 18),
                       )
                     : null,
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -78,7 +79,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                 focusedBorder: const OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(20)),
                   borderSide: BorderSide(
-                    color: Color(0xFF1E3A8A),
+                    color: Color(0xFF3B82F6),
                     width: 1.8,
                   ),
                 ),
@@ -99,7 +100,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
-            color: Colors.grey.withOpacity(0.15),
+            color: Colors.white.withOpacity(0.08),
             height: 1.0,
           ),
         ),
@@ -156,14 +157,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1E293B),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.search_off_outlined,
                         size: 64,
-                        color: Colors.grey[400],
+                        color: Colors.white30,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -172,7 +173,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -181,7 +182,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[500],
+                        color: Colors.white.withOpacity(0.6),
                         height: 1.5,
                       ),
                     ),
@@ -191,7 +192,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       height: 48,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E3A8A),
+                          backgroundColor: const Color(0xFF3B82F6),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -222,14 +223,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                     Icon(
                       Icons.find_in_page_outlined,
                       size: 20,
-                      color: Colors.grey[600],
+                      color: Colors.white.withOpacity(0.6),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Menampilkan ${filteredDocs.length} data warga yang cocok',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Colors.white.withOpacity(0.6),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -256,17 +257,10 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: const Color(0xFF1E293B),
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
                           border: Border.all(
-                            color: const Color(0xFFE2E8F0),
+                            color: Colors.white.withOpacity(0.08),
                             width: 1,
                           ),
                         ),
@@ -278,7 +272,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                               height: 52,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                color: Colors.grey[100],
+                                color: const Color(0xFF090D16),
                                 image: (widget.isAdmin && fotoUrl.isNotEmpty)
                                     ? DecorationImage(
                                         image: NetworkImage(fotoUrl),
@@ -293,7 +287,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                                         gradient: LinearGradient(
                                           colors: widget.isAdmin
                                               ? [Colors.red[400]!, Colors.red[700]!]
-                                              : [const Color(0xFF1E3A8A), const Color(0xFF3B82F6)],
+                                              : [const Color(0xFF3B82F6), const Color(0xFF2563EB)],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
@@ -318,7 +312,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                      color: Color(0xFF0F172A),
+                                      color: Colors.white,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -330,15 +324,15 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFF1F5F9),
+                                            color: Colors.white.withOpacity(0.05),
                                             borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                                            border: Border.all(color: Colors.white.withOpacity(0.08)),
                                           ),
                                           child: Text(
                                             "Blok $blok",
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11,
-                                              color: Color(0xFF475569),
+                                              color: Colors.white.withOpacity(0.7),
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
@@ -385,14 +379,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   }
 
   Widget _statusBadge(String status) {
-    bool isCair = status == 'Sudah Menerima';
+    final bool isCair = status == 'Sudah Menerima';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isCair ? const Color(0xFFDCFCE7) : const Color(0xFFFEF9C3),
+        color: isCair ? Colors.green.withOpacity(0.1) : Colors.amber.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: isCair ? const Color(0xFFBBF7D0) : const Color(0xFFFEF08A),
+          color: isCair ? Colors.green.withOpacity(0.2) : Colors.amber.withOpacity(0.2),
         ),
       ),
       child: Row(
@@ -401,7 +395,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
           Icon(
             isCair ? Icons.check_circle : Icons.pending,
             size: 12,
-            color: isCair ? const Color(0xFF16A34A) : const Color(0xFFCA8A04),
+            color: isCair ? Colors.green : Colors.amber,
           ),
           const SizedBox(width: 4),
           Text(
@@ -409,7 +403,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isCair ? const Color(0xFF15803D) : const Color(0xFFA16207),
+              color: isCair ? Colors.green : Colors.amber,
             ),
           ),
         ],
@@ -451,7 +445,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+                      color: Colors.white,
                     ),
                   ),
                   const Text(
@@ -494,13 +488,13 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: menerimaBantuan == 'Ya'
-                            ? const Color(0xFFDCFCE7).withOpacity(0.3)
-                            : const Color(0xFFF1F5F9),
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.white.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: menerimaBantuan == 'Ya'
-                              ? const Color(0xFFBBF7D0).withOpacity(0.5)
-                              : const Color(0xFFE2E8F0),
+                              ? Colors.green.withOpacity(0.2)
+                              : Colors.white.withOpacity(0.1),
                         ),
                       ),
                       child: Column(
@@ -568,7 +562,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                         Expanded(
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E3A8A),
+                              backgroundColor: const Color(0xFF3B82F6),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
@@ -615,8 +609,8 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       Expanded(
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF475569),
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            foregroundColor: Colors.white,
+                            side: BorderSide(color: Colors.white.withOpacity(0.2)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -656,7 +650,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             child: Text(
               value?.toString() ?? '-',
               textAlign: TextAlign.end,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E293B)),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
             ),
           ),
         ],

@@ -246,15 +246,13 @@ class _FormWargaPageState extends State<FormWargaPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           _isEditMode ? "Edit Data Warga" : "Tambah Warga Baru",
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -288,10 +286,10 @@ class _FormWargaPageState extends State<FormWargaPage> {
                 height: 140,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _lokasiTerpilih != null ? theme.colorScheme.primary : const Color(0xFFCBD5E1),
+                    color: _lokasiTerpilih != null ? theme.colorScheme.primary : const Color(0xFF334155),
                     width: 1.5,
                   ),
                 ),
@@ -301,13 +299,13 @@ class _FormWargaPageState extends State<FormWargaPage> {
                     Icon(
                       _lokasiTerpilih == null ? Icons.map_outlined : Icons.add_location_alt_rounded,
                       size: 44,
-                      color: _lokasiTerpilih != null ? theme.colorScheme.primary : const Color(0xFF64748B),
+                      color: _lokasiTerpilih != null ? theme.colorScheme.primary : const Color(0xFF94A3B8),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _lokasiTerpilih == null ? "Ketuk untuk Menyesuaikan Titik di Peta" : "Lokasi Rumah Berhasil Ditentukan!",
                       style: TextStyle(
-                        color: _lokasiTerpilih != null ? theme.colorScheme.primary : const Color(0xFF64748B),
+                        color: _lokasiTerpilih != null ? theme.colorScheme.primary : const Color(0xFF94A3B8),
                         fontWeight: _lokasiTerpilih != null ? FontWeight.w600 : FontWeight.normal,
                         fontSize: 14,
                       ),
@@ -357,10 +355,10 @@ class _FormWargaPageState extends State<FormWargaPage> {
                 height: 180,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _fotoRumah != null ? theme.colorScheme.secondary : const Color(0xFFCBD5E1),
+                    color: _fotoRumah != null ? theme.colorScheme.secondary : const Color(0xFF334155),
                     width: 1.5,
                   ),
                   image: _fotoRumah != null ? DecorationImage(image: FileImage(_fotoRumah!), fit: BoxFit.cover) : null,
@@ -369,11 +367,11 @@ class _FormWargaPageState extends State<FormWargaPage> {
                     ? const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.camera_alt_outlined, size: 44, color: Color(0xFF64748B)),
+                          Icon(Icons.camera_alt_outlined, size: 44, color: Color(0xFF94A3B8)),
                           const SizedBox(height: 8),
                           Text(
                             "Ketuk untuk Mengambil Foto Rumah",
-                            style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
                           ),
                         ],
                       )
@@ -456,30 +454,58 @@ class _FormWargaPageState extends State<FormWargaPage> {
             const SizedBox(height: 36),
 
             // TOMBOL SIMPAN (DENGAN LOADING PROVIDER)
-            SizedBox(
+            Container(
               width: double.infinity,
-              height: 54,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                ),
-                onPressed: wargaProvider.isLoading ? null : _simpanDataKeFirebase,
-                child: wargaProvider.isLoading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
+              height: 52,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: wargaProvider.isLoading
+                    ? LinearGradient(
+                        colors: [
+                          const Color(0xFF3B82F6).withOpacity(0.6),
+                          const Color(0xFF2563EB).withOpacity(0.6),
+                        ],
                       )
-                    : Text(
-                        _isEditMode ? "Simpan Perubahan" : "Simpan Data Warga",
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    : const LinearGradient(
+                        colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
                       ),
+                boxShadow: wargaProvider.isLoading
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: const Color(0xFF3B82F6).withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: wargaProvider.isLoading ? null : () => _simpanDataKeFirebase(),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Center(
+                    child: wargaProvider.isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            _isEditMode ? "Simpan Perubahan" : "Simpan Data Warga",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -495,7 +521,7 @@ class _FormWargaPageState extends State<FormWargaPage> {
       style: const TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w800,
-        color: Color(0xFF1E293B),
+        color: Color(0xFF94A3B8),
         letterSpacing: 1.1,
       ),
     );

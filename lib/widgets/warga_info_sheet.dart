@@ -89,18 +89,11 @@ class WargaInfoSheet extends StatelessWidget {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    color: Colors.grey[200],
+                    color: const Color(0xFF090D16),
                     image: DecorationImage(
                       image: NetworkImage(data['foto_url']),
                       fit: BoxFit.cover,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
                 )
               else
@@ -109,19 +102,21 @@ class WargaInfoSheet extends StatelessWidget {
                   height: 120,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: const Color(0xFF090D16),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[200]!),
+                    border: Border.all(color: Colors.white.withOpacity(0.08)),
                   ),
-                  child: const Column(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.image_not_supported_outlined, size: 36, color: Colors.grey),
-                      SizedBox(height: 8),
-                      Text("Foto rumah tidak tersedia", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                      Icon(Icons.image_not_supported_outlined, size: 36, color: Colors.white.withOpacity(0.3)),
+                      const SizedBox(height: 8),
+                      Text("Foto rumah tidak tersedia", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
                     ],
                   ),
                 ),
+
 
               // --- TOMBOL-TOMBOL NAVIGASI / EDIT ---
               if (isAdmin && onEditPressed != null) ...[

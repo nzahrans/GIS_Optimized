@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../constants/map_style.dart';
 
 class PickMapPage extends StatefulWidget {
   final LatLng? initialCenter; // Lokasi awal jika ada
@@ -26,7 +27,7 @@ class _PickMapPageState extends State<PickMapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Geser Peta ke Titik Rumah"),
+        title: const Text("Pilih Lokasi Rumah"),
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
@@ -44,6 +45,9 @@ class _PickMapPageState extends State<PickMapPage> {
               target: _currentCenter,
               zoom: 19.0, // Zoom sangat dekat
             ),
+            onMapCreated: (controller) {
+              controller.setMapStyle(MapStyle.darkStyle);
+            },
             onCameraMove: (position) {
               // Update koordinat setiap peta digeser
               setState(() {
@@ -68,8 +72,9 @@ class _PickMapPageState extends State<PickMapPage> {
             child: Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFF1E293B),
                 borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.5),
                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
               ),
               child: Column(
@@ -77,13 +82,13 @@ class _PickMapPageState extends State<PickMapPage> {
                   const Text("Koordinat Terpilih:", style: TextStyle(fontSize: 12, color: Colors.grey)),
                   Text(
                     "${_currentCenter.latitude.toStringAsFixed(6)}, ${_currentCenter.longitude.toStringAsFixed(6)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
                   ),
                   const SizedBox(height: 5),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2C3E50)),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3B82F6)),
                       onPressed: () {
                         Navigator.pop(context, _currentCenter);
                       },

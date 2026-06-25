@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/routing_service.dart';
+import '../constants/map_style.dart';
 
 class MapProvider extends ChangeNotifier {
   GoogleMapController? _mapController;
@@ -19,16 +20,22 @@ class MapProvider extends ChangeNotifier {
   void toggleMapType() {
     if (_currentMapType == MapType.normal) {
       _currentMapType = MapType.hybrid;
+      _mapController?.setMapStyle(null);
     } else if (_currentMapType == MapType.hybrid) {
       _currentMapType = MapType.terrain;
+      _mapController?.setMapStyle(null);
     } else {
       _currentMapType = MapType.normal;
+      _mapController?.setMapStyle(MapStyle.darkStyle);
     }
     notifyListeners();
   }
 
   void setController(GoogleMapController controller) {
     _mapController = controller;
+    if (_currentMapType == MapType.normal) {
+      _mapController?.setMapStyle(MapStyle.darkStyle);
+    }
   }
 
   /// Bersihkan data rute

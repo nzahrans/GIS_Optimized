@@ -114,20 +114,20 @@ class _AdminHomePageState extends State<AdminHomePage> {
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.zero,
       itemCount: displayList.length + (suggestions.length > 5 ? 1 : 0),
-      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+      separatorBuilder: (context, index) => Divider(height: 1, color: Colors.white.withOpacity(0.08)),
       itemBuilder: (context, index) {
         if (index == displayList.length) {
           return ListTile(
             dense: true,
-            tileColor: const Color(0xFFF8FAFC),
+            tileColor: const Color(0xFF0F172A),
             title: Text(
               "Lihat semua hasil untuk '$_searchQuery'...",
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E3A8A),
+                color: Color(0xFF3B82F6),
               ),
             ),
-            trailing: const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF1E3A8A)),
+            trailing: const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF3B82F6)),
             onTap: () {
               final searchVal = _searchQuery;
               _searchController.clear();
@@ -157,11 +157,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
           dense: true,
           leading: CircleAvatar(
             radius: 14,
-            backgroundColor: isAdminPage ? Colors.red[50] : const Color(0xFFE0E7FF),
+            backgroundColor: isAdminPage ? Colors.red.withOpacity(0.2) : const Color(0xFF3B82F6).withOpacity(0.2),
             child: Icon(
               Icons.location_on_outlined,
               size: 16,
-              color: isAdminPage ? Colors.red : const Color(0xFF1E3A8A),
+              color: isAdminPage ? Colors.red : const Color(0xFF3B82F6),
             ),
           ),
           title: Text(
@@ -277,8 +277,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.95),
+                  color: const Color(0xFF1E293B).withOpacity(0.85),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.5),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
@@ -293,7 +294,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   children: [
                     Icon(
                       _isDashboardExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
-                      color: const Color(0xFF1E3A8A),
+                      color: Colors.white70,
                       size: 24,
                     ),
                     const SizedBox(width: 4),
@@ -302,7 +303,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: Color(0xFF2C3E50),
+                        color: Colors.white,
                       ),
                     ),
                     if (_activeFilter != null) ...[
@@ -346,7 +347,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          color: const Color(0xFF3B82F6).withOpacity(0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -354,7 +355,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E3A8A),
+                            color: Color(0xFF3B82F6),
                           ),
                         ),
                       ),
@@ -371,8 +372,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       margin: const EdgeInsets.only(top: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
+                        color: const Color(0xFF1E293B).withOpacity(0.85),
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.5),
                         boxShadow: const [
                           BoxShadow(
                             color: Colors.black12,
@@ -685,70 +687,74 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(30),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 5,
-                                      ),
-                                    ],
-                                  ),
-                                  child: TextField(
-                                    controller: _searchController,
-                                    focusNode: _searchFocusNode,
-                                    decoration: InputDecoration(
-                                      hintText: "Cari Data Warga",
-                                      filled: false,
-                                      prefixIcon: const Padding(
-                                        padding: EdgeInsets.only(
-                                          left: 15,
-                                          right: 10,
-                                        ),
-                                        child: Icon(Icons.search, color: Colors.grey),
-                                      ),
-                                      suffixIcon: _searchQuery.isNotEmpty
-                                          ? GestureDetector(
-                                              onTap: () {
-                                                _searchController.clear();
-                                                setState(() {
-                                                  _searchQuery = "";
-                                                });
-                                              },
-                                              child: const Icon(
-                                                Icons.clear,
-                                                color: Colors.grey,
-                                              ),
-                                            )
-                                          : null,
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 15,
-                                      ),
-                                      border: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(30),
-                                        ),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      enabledBorder: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(30),
-                                        ),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      focusedBorder: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(30),
-                                        ),
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF1E3A8A),
-                                          width: 1.8,
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(30),
+                                  child: BackdropFilter(
+                                    filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1E293B).withOpacity(0.85),
+                                        borderRadius: BorderRadius.circular(30),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.12),
+                                          width: 1.5,
                                         ),
                                       ),
-                                    ),
+                                      child: TextField(
+                                        controller: _searchController,
+                                        focusNode: _searchFocusNode,
+                                        style: const TextStyle(color: Colors.white),
+                                        decoration: InputDecoration(
+                                          hintText: "Cari Data Warga",
+                                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                          filled: false,
+                                          prefixIcon: const Padding(
+                                            padding: EdgeInsets.only(
+                                              left: 15,
+                                              right: 10,
+                                            ),
+                                            child: Icon(Icons.search, color: Colors.white70),
+                                          ),
+                                          suffixIcon: _searchQuery.isNotEmpty
+                                              ? GestureDetector(
+                                                  onTap: () {
+                                                    _searchController.clear();
+                                                    setState(() {
+                                                      _searchQuery = "";
+                                                    });
+                                                  },
+                                                  child: const Icon(
+                                                    Icons.clear,
+                                                    color: Colors.white70,
+                                                  ),
+                                                )
+                                              : null,
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                            horizontal: 15,
+                                          ),
+                                          border: const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(30),
+                                            ),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          enabledBorder: const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(30),
+                                            ),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          focusedBorder: const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(30),
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: Color(0xFF3B82F6),
+                                              width: 1.8,
+                                            ),
+                                          ),
+                                        ),
                                     textInputAction: TextInputAction.search,
                                     onChanged: (value) {
                                       setState(() {
@@ -776,27 +782,28 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                     },
                                   ),
                                 ),
+                                ),
+                                ),
 
                                 // Suggestions Overlay
                                 if (_searchQuery.isNotEmpty) ...[
                                   const SizedBox(height: 8),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          color: Colors.black12,
-                                          blurRadius: 10,
-                                          offset: Offset(0, 4),
-                                        )
-                                      ],
-                                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                                    ),
-                                    constraints: const BoxConstraints(maxHeight: 250),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: _buildSuggestionsList(context, allWargaDocs, true),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: BackdropFilter(
+                                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF1E293B).withOpacity(0.95),
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.5),
+                                        ),
+                                        constraints: const BoxConstraints(maxHeight: 250),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(16),
+                                          child: _buildSuggestionsList(context, allWargaDocs, true),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -884,8 +891,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   heroTag: "btnMapTypeAdmin",
                   mini: true,
                   onPressed: () => mapProvider.toggleMapType(),
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF1E3A8A),
+                  backgroundColor: const Color(0xFF1E293B),
+                  foregroundColor: Colors.white,
                   tooltip: "Ganti Tipe Peta",
                   child: const Icon(Icons.layers_outlined),
                 ),
@@ -896,9 +903,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
       ),
 
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF2C3E50),
+        backgroundColor: const Color(0xFF3B82F6),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Tambah Data", style: TextStyle(color: Colors.white)),
+        label: const Text("Tambah Data", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FormWargaPage())),
       ),
     );
