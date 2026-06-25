@@ -141,7 +141,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                   const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(30),
@@ -149,10 +148,28 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     ),
                     child: TextField(
                       decoration: const InputDecoration(
-                        hintText: "Admin: Cari Data Warga...",
-                        border: InputBorder.none,
+                        hintText: "Cari Data Warga",
                         filled: false,
-                        icon: Icon(Icons.search),
+                        prefixIcon: Padding(
+                          padding: EdgeInsets.only(left: 15, right: 10),
+                          child: Icon(Icons.search),
+                        ),
+                        contentPadding: EdgeInsets.only(top: 14, bottom: 14, right: 15),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(30)),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(30)),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(30)),
+                          borderSide: BorderSide(
+                            color: Color(0xFF1E3A8A),
+                            width: 1.8,
+                          ),
+                        ),
                       ),
                       textInputAction: TextInputAction.search,
                       onSubmitted: (value) {
