@@ -90,6 +90,8 @@ class _UserHomePageState extends State<UserHomePage> {
                   context.read<MapProvider>().setController(controller);
                 },
                 onTap: (point) {
+                  FocusScope.of(context).unfocus();
+                  
                   if (_selectedDocId != null) setState(() => _selectedDocId = null);
                 },
                 markers: markers,
@@ -105,66 +107,108 @@ class _UserHomePageState extends State<UserHomePage> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(15.0),
-              child: Column(
+              child: Row(
                 children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Material(
-                      elevation: 5, shape: const CircleBorder(), color: Colors.white,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: isLoggedInWarga
-                            ? IconButton(
-                                icon: const Icon(Icons.person, color: Color(0xFF1E3A8A)),
-                                tooltip: "Profil Saya",
-                                onPressed: () => _showProfilWarga(context, authProvider.user!.email!),
-                              )
-                            : IconButton(
-                                icon: const Icon(Icons.login, color: Color(0xFF1E3A8A)),
-                                tooltip: "Login",
-                                onPressed: () => Navigator.pushNamed(context, '/login'),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 5,
+                          )
+                        ],
+                      ),
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          hintText: "Cari Warga",
+                          filled: false,
+                          prefixIcon: Padding(
+                            padding: EdgeInsets.only(
+                              left: 15,
+                              right: 10,
+                            ),
+                            child: Icon(
+                              Icons.search,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          contentPadding: EdgeInsets.only(
+                            top: 14,
+                            bottom: 14,
+                            right: 15,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(30),
+                            ),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(30),
+                            ),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(30),
+                            ),
+                            borderSide: BorderSide(
+                              color: Color(0xFF1E3A8A),
+                              width: 1.8,
+                            ),
+                          ),
+                        ),
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (value) {
+                          if (value.trim().isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SearchResultsPage(
+                                  query: value,
+                                  isAdmin: false,
+                                ),
                               ),
+                            );
+                          }
+                        },
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5)],
-                    ),
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        hintText: "Cari Warga",
-                        filled: false,
-                        prefixIcon: Padding(
-                          padding: EdgeInsets.only(left: 15, right: 10),
-                          child: Icon(Icons.search, color: Colors.grey),
-                        ),
-                        contentPadding: EdgeInsets.only(top: 14, bottom: 14, right: 15),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide(
-                            color: Color(0xFF1E3A8A),
-                            width: 1.8,
-                          ),
-                        ),
-                      ),
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (value) {
-                        if (value.trim().isNotEmpty) {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => SearchResultsPage(query: value, isAdmin: false)));
-                        }
-                      },
+
+                  const SizedBox(width: 10),
+
+                  Material(
+                    elevation: 5,
+                    shape: const CircleBorder(),
+                    color: Colors.white,
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: isLoggedInWarga
+                          ? IconButton(
+                              icon: const Icon(
+                                Icons.person,
+                                color: Color(0xFF1E3A8A),
+                              ),
+                              tooltip: "Profil Saya",
+                              onPressed: () => _showProfilWarga(
+                                context,
+                                authProvider.user!.email!,
+                              ),
+                            )
+                          : IconButton(
+                              icon: const Icon(
+                                Icons.login,
+                                color: Color(0xFF1E3A8A),
+                              ),
+                              tooltip: "Login",
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/login'),
+                            ),
                     ),
                   ),
                 ],

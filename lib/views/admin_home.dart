@@ -100,6 +100,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   context.read<MapProvider>().setController(controller);
                 },
                 onTap: (point) {
+                  FocusScope.of(context).unfocus();
                   if (_selectedDocId != null) setState(() => _selectedDocId = null);
                 },
                 markers: markers,
@@ -115,68 +116,105 @@ class _AdminHomePageState extends State<AdminHomePage> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(15.0),
-              child: Column(
+              child: Row(
                 children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Material(
-                      elevation: 5, shape: const CircleBorder(), color: Colors.red,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.red,
-                        child: IconButton(
-                          icon: const Icon(Icons.logout, color: Colors.white),
-                          tooltip: "Logout Admin",
-                          onPressed: () async {
-                            await authProvider.signOut();
-                            if (mounted) {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => const LoginPage()),
-                              );
-                            }
-                          },
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          hintText: "Cari Data Warga",
+                          filled: false,
+                          prefixIcon: Padding(
+                            padding: EdgeInsets.only(
+                              left: 15,
+                              right: 10,
+                            ),
+                            child: Icon(Icons.search),
+                          ),
+                          contentPadding: EdgeInsets.only(
+                            top: 14,
+                            bottom: 14,
+                            right: 15,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(30),
+                            ),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(30),
+                            ),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(30),
+                            ),
+                            borderSide: BorderSide(
+                              color: Color(0xFF1E3A8A),
+                              width: 1.8,
+                            ),
+                          ),
                         ),
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (value) {
+                          FocusScope.of(context).unfocus();
+
+                          if (value.trim().isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SearchResultsPage(
+                                  query: value,
+                                  isAdmin: true,
+                                ),
+                              ),
+                            );
+                          }
+                        },
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5)],
-                    ),
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        hintText: "Cari Data Warga",
-                        filled: false,
-                        prefixIcon: Padding(
-                          padding: EdgeInsets.only(left: 15, right: 10),
-                          child: Icon(Icons.search),
+
+                  const SizedBox(width: 10),
+
+                  Material(
+                    elevation: 5,
+                    shape: const CircleBorder(),
+                    color: Colors.red,
+                    child: CircleAvatar(
+                      backgroundColor: Colors.red,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.logout,
+                          color: Colors.white,
                         ),
-                        contentPadding: EdgeInsets.only(top: 14, bottom: 14, right: 15),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide(
-                            color: Color(0xFF1E3A8A),
-                            width: 1.8,
-                          ),
-                        ),
+                        tooltip: "Logout Admin",
+                        onPressed: () async {
+                          await authProvider.signOut();
+
+                          if (mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
+                          }
+                        },
                       ),
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (value) {
-                        if (value.trim().isNotEmpty) {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => SearchResultsPage(query: value, isAdmin: true)));
-                        }
-                      },
                     ),
                   ),
                 ],

@@ -130,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _emailController,
                         keyboardType: TextInputType.text,
                         decoration: const InputDecoration(
-                          labelText: "Email Admin atau NIK Warga",
+                          labelText: "Email atau NIK",
                           prefixIcon: Icon(Icons.person_outline),
                         ),
                       ),
@@ -139,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: "Password (Default: 123456)",
+                          labelText: "Password",
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
