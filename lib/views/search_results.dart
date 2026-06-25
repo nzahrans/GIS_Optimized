@@ -19,47 +19,152 @@ class SearchResultsPage extends StatelessWidget {
         foregroundColor: Colors.black,
         elevation: 1,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('warga').snapshots(),
+      body: FutureBuilder<QuerySnapshot>(
+        future: FirebaseFirestore.instance.collection('warga').get(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-          var allDocs = snapshot.data!.docs;
-          var filteredDocs = allDocs.where((doc) {
-            var data = doc.data() as Map<String, dynamic>;
-            String namaWarga = (data['nama'] ?? '').toString().toLowerCase();
-            return namaWarga.contains(query.toLowerCase());
+          if (snapshot.hasError) {
+            return const Center(
+              child: Text('Terjadi kesalahan saat memuat data'),
+            );
+          }
+
+          if (!snapshot.hasData) {
+            return const Center(
+              child: Text('Data tidak tersedia'),
+            );
+          }
+
+          final allDocs = snapshot.data!.docs;
+
+          final filteredDocs = allDocs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+
+            final nama =
+                (data['nama'] ?? '').toString().toLowerCase();
+
+            final nik =
+                (data['nik'] ?? '').toString().toLowerCase();
+
+            final blok =
+                (data['blok'] ?? '').toString().toLowerCase();
+
+            final search =
+                query.toLowerCase().trim();
+
+            return nama.contains(search) ||
+                nik.contains(search) ||
+                blok.contains(search);
           }).toList();
 
           if (filteredDocs.isEmpty) {
-            return const Center(child: Text("Data tidak ditemukan"));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search_off,
+                    size: 80,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    "Data tidak ditemukan",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tidak ada data yang cocok dengan "$query"',
+                  ),
+                ],
+              ),
+            );
           }
 
-          return ListView.builder(
-            itemCount: filteredDocs.length,
-            itemBuilder: (context, index) {
-              var doc = filteredDocs[index];
-              var data = doc.data() as Map<String, dynamic>;
-
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: isAdmin ? Colors.red[100] : Colors.blue[100],
-                    child: Icon(Icons.person, color: isAdmin ? Colors.red : Colors.blue),
+          return Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                color: Colors.grey.shade100,
+                child: Text(
+                  '${filteredDocs.length} hasil ditemukan',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
                   ),
-                  title: Text(data['nama'] ?? 'Tanpa Nama', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: isAdmin
-                      ? Text("NIK: ${data['nik']}\nStatus: ${data['status_cair']}")
-                      : (data['blok'] != null && data['blok'] != '') ? Text("Blok: ${data['blok']}") : null,
-                  isThreeLine: isAdmin,
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    _showDetailDialog(context, data, doc.id);
+                ),
+              ),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filteredDocs.length,
+                  itemBuilder: (context, index) {
+                    var doc = filteredDocs[index];
+                    var data =
+                        doc.data() as Map<String, dynamic>;
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 8,
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: isAdmin
+                              ? Colors.red[100]
+                              : Colors.blue[100],
+                          child: Icon(
+                            Icons.person,
+                            color: isAdmin
+                                ? Colors.red
+                                : Colors.blue,
+                          ),
+                        ),
+                        title: Text(
+                          data['nama'] ?? 'Tanpa Nama',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: isAdmin
+                            ? Text(
+                                "NIK: ${data['nik']}\nStatus: ${data['status_cair']}",
+                              )
+                            : (data['blok'] != null &&
+                                    data['blok'] != '')
+                                ? Text(
+                                    "Blok: ${data['blok']}",
+                                  )
+                                : null,
+                        isThreeLine: isAdmin,
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                        ),
+                        onTap: () {
+                          _showDetailDialog(
+                            context,
+                            data,
+                            doc.id,
+                          );
+                        },
+                      ),
+                    );
                   },
                 ),
-              );
-            },
+              ),
+            ],
           );
         },
       ),
