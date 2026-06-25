@@ -25,6 +25,117 @@ class _AdminHomePageState extends State<AdminHomePage> {
   String? _selectedDocId;
   bool _isDashboardExpanded = false;
   String? _activeFilter;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildSuggestionsList(BuildContext context, List<DocumentSnapshot> docs, bool isAdminPage) {
+    final query = _searchQuery.toLowerCase().trim();
+    final suggestions = docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final nama = (data['nama'] ?? '').toString().toLowerCase();
+      final nik = (data['nik'] ?? '').toString().toLowerCase();
+      final blok = (data['blok'] ?? '').toString().toLowerCase();
+      return nama.contains(query) ||
+          nik.contains(query) ||
+          blok.contains(query);
+    }).toList();
+
+    if (suggestions.isEmpty) {
+      return const ListTile(
+        leading: Icon(Icons.search_off, color: Colors.grey),
+        title: Text("Tidak ada hasil cocok", style: TextStyle(color: Colors.grey)),
+      );
+    }
+
+    final displayList = suggestions.take(5).toList();
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
+      padding: EdgeInsets.zero,
+      itemCount: displayList.length + (suggestions.length > 5 ? 1 : 0),
+      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+      itemBuilder: (context, index) {
+        if (index == displayList.length) {
+          return ListTile(
+            dense: true,
+            tileColor: const Color(0xFFF8FAFC),
+            title: Text(
+              "Lihat semua hasil untuk '$_searchQuery'...",
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E3A8A),
+              ),
+            ),
+            trailing: const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF1E3A8A)),
+            onTap: () {
+              final searchVal = _searchQuery;
+              _searchController.clear();
+              setState(() {
+                _searchQuery = "";
+              });
+              FocusScope.of(context).unfocus();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SearchResultsPage(
+                    query: searchVal,
+                    isAdmin: isAdminPage,
+                  ),
+                ),
+              );
+            },
+          );
+        }
+
+        final doc = displayList[index];
+        final data = doc.data() as Map<String, dynamic>;
+        final nama = data['nama'] ?? 'Tanpa Nama';
+        final blok = data['blok'] ?? '';
+
+        return ListTile(
+          dense: true,
+          leading: CircleAvatar(
+            radius: 14,
+            backgroundColor: isAdminPage ? Colors.red[50] : const Color(0xFFE0E7FF),
+            child: Icon(
+              Icons.location_on_outlined,
+              size: 16,
+              color: isAdminPage ? Colors.red : const Color(0xFF1E3A8A),
+            ),
+          ),
+          title: Text(
+            nama,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+          subtitle: blok.toString().isNotEmpty
+              ? Text("Blok $blok", style: const TextStyle(fontSize: 11))
+              : null,
+          onTap: () {
+            _searchController.clear();
+            setState(() {
+              _searchQuery = "";
+            });
+            FocusScope.of(context).unfocus();
+
+            if (data['lokasi'] != null) {
+              GeoPoint geo = data['lokasi'];
+              LatLng targetLatLng = LatLng(geo.latitude, geo.longitude);
+
+              context.read<MapProvider>().moveCamera(targetLatLng, zoom: 19.0);
+              _showAdminWargaInfo(context, doc.id, data);
+            }
+          },
+        );
+      },
+    );
+  }
 
   void _toggleFilter(String filter) {
     setState(() {
@@ -400,81 +511,82 @@ class _AdminHomePageState extends State<AdminHomePage> {
     final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // StreamBuilder untuk membaca Pin Marker secara realtime dari Firestore
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('warga').snapshots(),
-            builder: (context, snapshot) {
-              Set<Marker> markers = {};
-              LatLng? selectedLatLng;
-              if (snapshot.hasData) {
-                for (var doc in snapshot.data!.docs) {
-                  var data = doc.data() as Map<String, dynamic>;
-                  if (data['lokasi'] != null) {
-                    // Terapkan Filter Peta Aktif dari Dashboard
-                    if (_activeFilter != null) {
-                      bool matches = false;
-                      if (_activeFilter == 'total') {
-                        matches = true;
-                      } else if (_activeFilter == 'penerima') {
-                        matches = (data['menerima_bantuan'] == 'Ya');
-                      } else if (_activeFilter == 'sudah_cair') {
-                        matches = (data['status_cair'] == 'Sudah Menerima');
-                      } else if (_activeFilter == 'belum_cair') {
-                        matches = (data['menerima_bantuan'] == 'Ya' &&
-                            data['status_cair'] != 'Sudah Menerima');
-                      } else if (_activeFilter == 'terpetakan') {
-                        matches = true; // Karena sudah difilter data['lokasi'] != null
-                      }
-                      if (!matches) continue;
-                    }
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('warga').snapshots(),
+        builder: (context, snapshot) {
+          Set<Marker> markers = {};
+          LatLng? selectedLatLng;
+          List<DocumentSnapshot> allWargaDocs = [];
+          if (snapshot.hasData) {
+            allWargaDocs = snapshot.data!.docs;
+            for (var doc in allWargaDocs) {
+              var data = doc.data() as Map<String, dynamic>;
+              if (data['lokasi'] != null) {
+                // Terapkan Filter Peta Aktif dari Dashboard
+                if (_activeFilter != null) {
+                  bool matches = false;
+                  if (_activeFilter == 'total') {
+                    matches = true;
+                  } else if (_activeFilter == 'penerima') {
+                    matches = (data['menerima_bantuan'] == 'Ya');
+                  } else if (_activeFilter == 'sudah_cair') {
+                    matches = (data['status_cair'] == 'Sudah Menerima');
+                  } else if (_activeFilter == 'belum_cair') {
+                    matches = (data['menerima_bantuan'] == 'Ya' &&
+                        data['status_cair'] != 'Sudah Menerima');
+                  } else if (_activeFilter == 'terpetakan') {
+                    matches = true; // Karena sudah difilter data['lokasi'] != null
+                  }
+                  if (!matches) continue;
+                }
 
-                    GeoPoint geoPoint = data['lokasi'];
-                    bool isSelected = (_selectedDocId == doc.id);
-                    if (isSelected) {
-                      selectedLatLng = LatLng(geoPoint.latitude, geoPoint.longitude);
-                    }
+                GeoPoint geoPoint = data['lokasi'];
+                bool isSelected = (_selectedDocId == doc.id);
+                if (isSelected) {
+                  selectedLatLng = LatLng(geoPoint.latitude, geoPoint.longitude);
+                }
 
-                    // Logika pewarnaan marker tematik sesuai proposal
-                    double markerHue = BitmapDescriptor.hueBlue; // Default: Tidak menerima bantuan
-                    if (data['menerima_bantuan'] == 'Ya') {
-                      if (data['status_cair'] == 'Sudah Menerima') {
-                        markerHue = BitmapDescriptor.hueGreen;
-                      } else {
-                        markerHue = BitmapDescriptor.hueRed;
-                      }
-                    }
-
-                    markers.add(
-                      Marker(
-                        markerId: MarkerId(doc.id),
-                        position: LatLng(geoPoint.latitude, geoPoint.longitude),
-                        icon: isSelected
-                            ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet)
-                            : BitmapDescriptor.defaultMarkerWithHue(markerHue),
-                        onTap: () => _showAdminWargaInfo(context, doc.id, data),
-                      ),
-                    );
+                // Logika pewarnaan marker tematik sesuai proposal
+                double markerHue = BitmapDescriptor.hueBlue; // Default: Tidak menerima bantuan
+                if (data['menerima_bantuan'] == 'Ya') {
+                  if (data['status_cair'] == 'Sudah Menerima') {
+                    markerHue = BitmapDescriptor.hueGreen;
+                  } else {
+                    markerHue = BitmapDescriptor.hueRed;
                   }
                 }
-              }
 
-              Set<Circle> circles = {};
-              if (selectedLatLng != null) {
-                circles.add(
-                  Circle(
-                    circleId: const CircleId('selected_home_highlight'),
-                    center: selectedLatLng,
-                    radius: 20.0, // 20 meter radius
-                    fillColor: const Color(0xFF1E3A8A).withOpacity(0.18),
-                    strokeColor: const Color(0xFF1E3A8A),
-                    strokeWidth: 2,
+                markers.add(
+                  Marker(
+                    markerId: MarkerId(doc.id),
+                    position: LatLng(geoPoint.latitude, geoPoint.longitude),
+                    icon: isSelected
+                        ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet)
+                        : BitmapDescriptor.defaultMarkerWithHue(markerHue),
+                    onTap: () => _showAdminWargaInfo(context, doc.id, data),
                   ),
                 );
               }
+            }
+          }
 
-              return GoogleMap(
+          Set<Circle> circles = {};
+          if (selectedLatLng != null) {
+            circles.add(
+              Circle(
+                circleId: const CircleId('selected_home_highlight'),
+                center: selectedLatLng,
+                radius: 20.0, // 20 meter radius
+                fillColor: const Color(0xFF1E3A8A).withOpacity(0.18),
+                strokeColor: const Color(0xFF1E3A8A),
+                strokeWidth: 2,
+              ),
+            );
+          }
+
+          return Stack(
+            children: [
+              GoogleMap(
                 mapType: mapProvider.currentMapType,
                 initialCameraPosition: CameraPosition(
                   target: widget.centerOnLocation ?? const LatLng(-6.850071, 107.930230),
@@ -495,174 +607,230 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 zoomControlsEnabled: false,
                 mapToolbarEnabled: false,
                 padding: const EdgeInsets.only(bottom: 25, left: 10),
-              );
-            },
-          ),
-
-          // Header Admin (Search & Logout) & Dashboard
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 5,
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            decoration: const InputDecoration(
-                              hintText: "Cari Data Warga",
-                              filled: false,
-                              prefixIcon: Padding(
-                                padding: EdgeInsets.only(
-                                  left: 15,
-                                  right: 10,
-                                ),
-                                child: Icon(Icons.search),
-                              ),
-                              contentPadding: EdgeInsets.only(
-                                top: 14,
-                                bottom: 14,
-                                right: 15,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(30),
-                                ),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(30),
-                                ),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(30),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0xFF1E3A8A),
-                                  width: 1.8,
-                                ),
-                              ),
-                            ),
-                            textInputAction: TextInputAction.search,
-                            onSubmitted: (value) {
-                              FocusScope.of(context).unfocus();
-
-                              if (value.trim().isNotEmpty) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => SearchResultsPage(
-                                      query: value,
-                                      isAdmin: true,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 10),
-
-                      Material(
-                        elevation: 5,
-                        shape: const CircleBorder(),
-                        color: Colors.red,
-                        child: CircleAvatar(
-                          backgroundColor: Colors.red,
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.logout,
-                              color: Colors.white,
-                            ),
-                            tooltip: "Logout Admin",
-                            onPressed: () async {
-                              await authProvider.signOut();
-
-                              if (mounted) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginPage(),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  _buildDashboardCards(),
-                ],
               ),
-            ),
-          ),
 
-          // Tombol Hapus Rute
-          if (mapProvider.polylines.isNotEmpty)
-            Positioned(
-              bottom: 90, // Lebih tinggi agar tidak menumpuk dengan FAB Tambah Data
-              right: 15,
-              child: FloatingActionButton.extended(
-                onPressed: () => mapProvider.clearRoute(),
-                backgroundColor: Colors.red[800],
-                icon: const Icon(Icons.clear, color: Colors.white),
-                label: const Text("Hapus Rute", style: TextStyle(color: Colors.white)),
-              ),
-            ),
-
-          // Indikator Loading Rute
-          if (mapProvider.isLoadingRoute)
-            const Center(
-              child: Card(
-                elevation: 4,
+              // Header Admin (Search & Logout) & Dashboard
+              SafeArea(
                 child: Padding(
-                  padding: EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(15.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 10),
-                      Text("Memuat Rute..."),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(30),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 5,
+                                      ),
+                                    ],
+                                  ),
+                                  child: TextField(
+                                    controller: _searchController,
+                                    decoration: InputDecoration(
+                                      hintText: "Cari Data Warga",
+                                      filled: false,
+                                      prefixIcon: const Padding(
+                                        padding: EdgeInsets.only(
+                                          left: 15,
+                                          right: 10,
+                                        ),
+                                        child: Icon(Icons.search, color: Colors.grey),
+                                      ),
+                                      suffixIcon: _searchQuery.isNotEmpty
+                                          ? GestureDetector(
+                                              onTap: () {
+                                                _searchController.clear();
+                                                setState(() {
+                                                  _searchQuery = "";
+                                                });
+                                              },
+                                              child: const Icon(
+                                                Icons.clear,
+                                                color: Colors.grey,
+                                              ),
+                                            )
+                                          : null,
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                        horizontal: 15,
+                                      ),
+                                      border: const OutlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(30),
+                                        ),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      enabledBorder: const OutlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(30),
+                                        ),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: const OutlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(30),
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: Color(0xFF1E3A8A),
+                                          width: 1.8,
+                                        ),
+                                      ),
+                                    ),
+                                    textInputAction: TextInputAction.search,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _searchQuery = value;
+                                      });
+                                    },
+                                    onSubmitted: (value) {
+                                      FocusScope.of(context).unfocus();
+                                      if (value.trim().isNotEmpty) {
+                                        _searchController.clear();
+                                        final currentQuery = _searchQuery;
+                                        setState(() {
+                                          _searchQuery = "";
+                                        });
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => SearchResultsPage(
+                                              query: currentQuery,
+                                              isAdmin: true,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+
+                                // Suggestions Overlay
+                                if (_searchQuery.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Colors.black12,
+                                          blurRadius: 10,
+                                          offset: Offset(0, 4),
+                                        )
+                                      ],
+                                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                                    ),
+                                    constraints: const BoxConstraints(maxHeight: 250),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: _buildSuggestionsList(context, allWargaDocs, true),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Material(
+                              elevation: 5,
+                              shape: const CircleBorder(),
+                              color: Colors.red,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.red,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.logout,
+                                    color: Colors.white,
+                                  ),
+                                  tooltip: "Logout Admin",
+                                  onPressed: () async {
+                                    await authProvider.signOut();
+
+                                    if (mounted) {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const LoginPage(),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_searchQuery.isEmpty) _buildDashboardCards(),
                     ],
                   ),
                 ),
               ),
-            ),
 
-          // Tombol Ganti Tipe Peta (Map Type Switcher)
-          Positioned(
-            bottom: mapProvider.polylines.isNotEmpty ? 150 : 90,
-            right: 15,
-            child: FloatingActionButton(
-              heroTag: "btnMapTypeAdmin",
-              mini: true,
-              onPressed: () => mapProvider.toggleMapType(),
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF1E3A8A),
-              tooltip: "Ganti Tipe Peta",
-              child: const Icon(Icons.layers_outlined),
-            ),
-          ),
-        ],
+              // Tombol Hapus Rute
+              if (mapProvider.polylines.isNotEmpty)
+                Positioned(
+                  bottom: 90, // Lebih tinggi agar tidak menumpuk dengan FAB Tambah Data
+                  right: 15,
+                  child: FloatingActionButton.extended(
+                    onPressed: () => mapProvider.clearRoute(),
+                    backgroundColor: Colors.red[800],
+                    icon: const Icon(Icons.clear, color: Colors.white),
+                    label: const Text("Hapus Rute", style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+
+              // Indikator Loading Rute
+              if (mapProvider.isLoadingRoute)
+                const Center(
+                  child: Card(
+                    elevation: 4,
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 10),
+                          Text("Memuat Rute..."),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+              // Tombol Ganti Tipe Peta (Map Type Switcher)
+              Positioned(
+                bottom: mapProvider.polylines.isNotEmpty ? 150 : 90,
+                right: 15,
+                child: FloatingActionButton(
+                  heroTag: "btnMapTypeAdmin",
+                  mini: true,
+                  onPressed: () => mapProvider.toggleMapType(),
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF1E3A8A),
+                  tooltip: "Ganti Tipe Peta",
+                  child: const Icon(Icons.layers_outlined),
+                ),
+              ),
+            ],
+          );
+        },
       ),
 
       floatingActionButton: FloatingActionButton.extended(

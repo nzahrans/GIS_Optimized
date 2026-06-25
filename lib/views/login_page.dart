@@ -45,9 +45,9 @@ class _LoginPageState extends State<LoginPage> {
     if (mounted) {
       if (success) {
         if (finalEmail.endsWith('@warga.sigbansos.com')) {
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         } else {
-          Navigator.pushReplacementNamed(context, '/admin_dashboard');
+          Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
