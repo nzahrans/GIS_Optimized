@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "519187295611",
+    "project_id": "gis-skripsi-free",
+    "storage_bucket": "gis-skripsi-free.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519187295611:android:c3836243edc574a21121de",
+        "android_client_info": {
+          "package_name": "com.skripsi.gis"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCs1GYHAs3x4dwRIih7AnxzTsphKlsNFO4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
