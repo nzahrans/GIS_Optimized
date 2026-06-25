@@ -22,141 +22,163 @@ class WargaInfoSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      width: double.infinity,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+        width: double.infinity,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  data['nama'] ?? 'Tanpa Nama',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-              ),
-              if (isAdmin && onDeletePressed != null)
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red, size: 28),
-                  onPressed: onDeletePressed,
-                ),
-            ],
-          ),
-          const Divider(),
-
-          // NIK & No KK (Admin Only)
-          if (isAdmin) ...[
-            _infoRow("NIK", data['nik']),
-            _infoRow("No. KK", data['no_kk']),
-          ],
-          _infoRow("Blok/Gang", data['blok']),
-          
-          if (isAdmin) ...[
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _infoRow("Terima Bantuan?", data['menerima_bantuan']),
-                  if (data['menerima_bantuan'] == 'Ya') ...[
-                    _infoRow("Jenis Bantuan", data['jenis_bantuan']),
-                    _infoRow("Status Cair", data['status_cair']),
-                  ]
+                  Expanded(
+                    child: Text(
+                      data['nama'] ?? 'Tanpa Nama',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (isAdmin && onDeletePressed != null)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 28),
+                      onPressed: onDeletePressed,
+                    ),
                 ],
               ),
-            ),
-          ],
-          const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 8),
 
-          // Foto Rumah
-          if (data['foto_url'] != null && data['foto_url'] != '')
-            Container(
-              margin: const EdgeInsets.only(bottom: 15),
-              height: 160,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.grey[200],
-                image: DecorationImage(
-                  image: NetworkImage(data['foto_url']),
-                  fit: BoxFit.cover,
+              // NIK & No KK (Admin Only)
+              if (isAdmin) ...[
+                _infoRow("NIK", data['nik']),
+                _infoRow("No. KK", data['no_kk']),
+              ],
+              _infoRow("Blok/Gang", data['blok']),
+              
+              if (isAdmin) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.1)),
+                  ),
+                  child: Column(
+                    children: [
+                      _infoRow("Terima Bantuan?", data['menerima_bantuan']),
+                      if (data['menerima_bantuan'] == 'Ya') ...[
+                        const Divider(height: 16),
+                        _infoRow("Jenis Bantuan", data['jenis_bantuan']),
+                        _infoRow("Status Cair", data['status_cair']),
+                      ]
+                    ],
+                  ),
                 ),
-              ),
-            )
-          else
-            Container(
-              margin: const EdgeInsets.only(bottom: 15),
-              height: 100,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: const Center(
-                child: Icon(Icons.image_not_supported, size: 36, color: Colors.grey),
-              ),
-            ),
+              ],
+              const SizedBox(height: 20),
 
-          const SizedBox(height: 10),
-
-          // --- TOMBOL-TOMBOL NAVIGASI / EDIT ---
-          if (isAdmin && onEditPressed != null) ...[
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange[700],
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              // Foto Rumah
+              if (data['foto_url'] != null && data['foto_url'] != '')
+                Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.grey[200],
+                    image: DecorationImage(
+                      image: NetworkImage(data['foto_url']),
+                      fit: BoxFit.cover,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.image_not_supported_outlined, size: 36, color: Colors.grey),
+                      SizedBox(height: 8),
+                      Text("Foto rumah tidak tersedia", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    ],
+                  ),
                 ),
-                icon: const Icon(Icons.edit, color: Colors.white),
-                label: const Text("Edit Data Warga", style: TextStyle(fontSize: 15)),
-                onPressed: onEditPressed,
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
 
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.blue[800],
-                side: BorderSide(color: Colors.blue[800]!, width: 1.5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: const Icon(Icons.map),
-              label: const Text("Tampilkan Rute di Aplikasi", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-              onPressed: onRoutePressed,
-            ),
-          ),
-          const SizedBox(height: 10),
+              // --- TOMBOL-TOMBOL NAVIGASI / EDIT ---
+              if (isAdmin && onEditPressed != null) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.secondary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 1,
+                    ),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text("Edit Data Warga", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    onPressed: onEditPressed,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isAdmin ? Colors.blue[800] : Colors.blue[700],
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: theme.colorScheme.primary,
+                        side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: const Text("Rute Internal", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      onPressed: onRoutePressed,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 1,
+                      ),
+                      icon: const Icon(Icons.directions_outlined, size: 18),
+                      label: const Text("Google Maps", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      onPressed: onExternalMapPressed,
+                    ),
+                  ),
+                ],
               ),
-              icon: const Icon(Icons.directions, color: Colors.white),
-              label: const Text("Navigasi ke Lokasi (Google Maps)", style: TextStyle(fontSize: 15)),
-              onPressed: onExternalMapPressed,
-            ),
+              const SizedBox(height: 8),
+            ],
           ),
-          const SizedBox(height: 10),
-        ],
+        ),
       ),
     );
   }

@@ -68,13 +68,23 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     GeoPoint geoPoint = data['lokasi'];
                     bool isSelected = (_selectedDocId == doc.id);
 
+                    // Logika pewarnaan marker tematik sesuai proposal
+                    double markerHue = BitmapDescriptor.hueBlue; // Default: Tidak menerima bantuan
+                    if (data['menerima_bantuan'] == 'Ya') {
+                      if (data['status_cair'] == 'Sudah Menerima') {
+                        markerHue = BitmapDescriptor.hueGreen;
+                      } else {
+                        markerHue = BitmapDescriptor.hueRed;
+                      }
+                    }
+
                     markers.add(
                       Marker(
                         markerId: MarkerId(doc.id),
                         position: LatLng(geoPoint.latitude, geoPoint.longitude),
                         icon: isSelected
-                            ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)
-                            : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                            ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet)
+                            : BitmapDescriptor.defaultMarkerWithHue(markerHue),
                         onTap: () => _showAdminWargaInfo(context, doc.id, data),
                       ),
                     );
@@ -141,6 +151,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       decoration: const InputDecoration(
                         hintText: "Admin: Cari Data Warga...",
                         border: InputBorder.none,
+                        filled: false,
                         icon: Icon(Icons.search),
                       ),
                       textInputAction: TextInputAction.search,
@@ -205,6 +216,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return WargaInfoSheet(

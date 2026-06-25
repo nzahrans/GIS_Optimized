@@ -243,135 +243,278 @@ class _FormWargaPageState extends State<FormWargaPage> {
   @override
   Widget build(BuildContext context) {
     final wargaProvider = context.watch<WargaProvider>();
+    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(_isEditMode ? "Edit Data Warga" : "Tambah Warga", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.normal)),
+        title: Text(
+          _isEditMode ? "Edit Data Warga" : "Tambah Warga Baru",
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionTitle("1. INFORMASI KEPALA KELUARGA"),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             _buildInputBox(controller: _kkController, hint: "Masukkan No. KK (16 Digit) *", keyboardType: TextInputType.number),
             _buildInputBox(controller: _nikController, hint: "Masukkan NIK Kepala Keluarga *", keyboardType: TextInputType.number),
             _buildInputBox(controller: _namaController, hint: "Masukkan Nama Lengkap *"),
             _buildInputBox(controller: _blokController, hint: "Masukkan Blok/Gang (opsional)"),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            _buildSectionTitle("2. Lokasi Rumah"),
-            const SizedBox(height: 10),
+            _buildSectionTitle("2. LOKASI RUMAH"),
+            const SizedBox(height: 16),
             GestureDetector(
               onTap: () async {
-                final LatLng? result = await Navigator.push(context, MaterialPageRoute(builder: (context) => PickMapPage(initialCenter: _lokasiTerpilih)));
+                final LatLng? result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => PickMapPage(initialCenter: _lokasiTerpilih)),
+                );
                 if (result != null) {
-                  setState(() { _lokasiTerpilih = result; _koordinatController.text = "${result.latitude}, ${result.longitude}"; });
+                  setState(() {
+                    _lokasiTerpilih = result;
+                    _koordinatController.text = "${result.latitude}, ${result.longitude}";
+                  });
                 }
               },
               child: Container(
-                height: 150, width: double.infinity,
-                decoration: BoxDecoration(color: const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade400)),
+                height: 140,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _lokasiTerpilih != null ? theme.colorScheme.primary : const Color(0xFFCBD5E1),
+                    width: 1.5,
+                  ),
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.location_on, size: 40, color: Colors.black87),
-                    const SizedBox(height: 5),
-                    Text(_lokasiTerpilih == null ? "Geser Peta Untuk Menyesuaikan Rumah" : "Lokasi Terpilih!", style: const TextStyle(color: Colors.grey)),
+                    Icon(
+                      _lokasiTerpilih == null ? Icons.map_outlined : Icons.add_location_alt_rounded,
+                      size: 44,
+                      color: _lokasiTerpilih != null ? theme.colorScheme.primary : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _lokasiTerpilih == null ? "Ketuk untuk Menyesuaikan Titik di Peta" : "Lokasi Rumah Berhasil Ditentukan!",
+                      style: TextStyle(
+                        color: _lokasiTerpilih != null ? theme.colorScheme.primary : const Color(0xFF64748B),
+                        fontWeight: _lokasiTerpilih != null ? FontWeight.w600 : FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Container(
-                    height: 50, padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(color: const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade400)),
-                    alignment: Alignment.centerLeft,
-                    child: TextField(controller: _koordinatController, readOnly: true, decoration: const InputDecoration(hintText: "Koordinat Rumah", border: InputBorder.none), style: const TextStyle(fontSize: 13)),
+                  child: TextField(
+                    controller: _koordinatController,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: "Koordinat Rumah",
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 SizedBox(
-                  height: 50, width: 60,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEEEEEE), foregroundColor: Colors.black, elevation: 0, side: BorderSide(color: Colors.grey.shade400), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  height: 54,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                      foregroundColor: theme.colorScheme.primary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                     onPressed: wargaProvider.isLoading ? null : () => _getCurrentLocation(),
-                    child: const Text("GPS", style: TextStyle(fontSize: 12)),
+                    icon: const Icon(Icons.gps_fixed, size: 18),
+                    label: const Text("GPS", style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            _buildSectionTitle("3. Foto Rumah"),
-            const SizedBox(height: 10),
+            _buildSectionTitle("3. FOTO RUMAH"),
+            const SizedBox(height: 16),
             GestureDetector(
-              onTap: () { _showImageSourceOptions(); },
+              onTap: _showImageSourceOptions,
               child: Container(
-                height: 150, width: double.infinity,
+                height: 180,
+                width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade400),
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _fotoRumah != null ? theme.colorScheme.secondary : const Color(0xFFCBD5E1),
+                    width: 1.5,
+                  ),
                   image: _fotoRumah != null ? DecorationImage(image: FileImage(_fotoRumah!), fit: BoxFit.cover) : null,
                 ),
-                child: _fotoRumah == null ? const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.camera_alt, size: 40, color: Colors.black87), SizedBox(height: 5), Text("Sentuh untuk ambil foto", style: TextStyle(color: Colors.black54))]) : null,
+                child: _fotoRumah == null
+                    ? const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.camera_alt_outlined, size: 44, color: Color(0xFF64748B)),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Ketuk untuk Mengambil Foto Rumah",
+                            style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                          ),
+                        ],
+                      )
+                    : null,
               ),
             ),
-            if (_fotoRumah != null) Center(child: TextButton.icon(icon: const Icon(Icons.refresh, color: Colors.blue), label: const Text("Ganti Foto", style: TextStyle(color: Colors.blue)), onPressed: () { _showImageSourceOptions(); })),
-            const SizedBox(height: 20),
-
-            _buildSectionTitle("4. Status Bantuan Sosial"),
-            const SizedBox(height: 10),
-            const Text("Apakah Keluarga Ini Menerima Bantuan?", style: TextStyle(fontSize: 13, color: Colors.black54)),
-            const SizedBox(height: 5),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(color: const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade400)),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _apakahMenerimaBantuan, isExpanded: true,
-                  items: ['Ya', 'Tidak'].map((String value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
-                  onChanged: (newValue) => setState(() { _apakahMenerimaBantuan = newValue!; }),
+            if (_fotoRumah != null)
+              Center(
+                child: TextButton.icon(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text("Ganti Foto Rumah"),
+                  onPressed: _showImageSourceOptions,
                 ),
               ),
+            const SizedBox(height: 24),
+
+            _buildSectionTitle("4. STATUS BANTUAN SOSIAL"),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _apakahMenerimaBantuan,
+              decoration: const InputDecoration(
+                labelText: "Apakah Keluarga Ini Menerima Bantuan?",
+              ),
+              items: ['Ya', 'Tidak']
+                  .map((value) => DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      ))
+                  .toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  _apakahMenerimaBantuan = newValue!;
+                });
+              },
             ),
             if (_apakahMenerimaBantuan == 'Ya') ...[
-              const SizedBox(height: 15),
+              const SizedBox(height: 16),
               _buildInputBox(controller: _jenisBantuanController, hint: "Jenis Bantuan (Contoh: PKH, BPNT)"),
-              const SizedBox(height: 10),
-              const Text("Status Penerimaan Saat Ini :", style: TextStyle(fontWeight: FontWeight.w500)),
-              RadioListTile<String>(title: const Text("Belum Menerima / Belum Cair"), value: 'Belum Menerima', groupValue: _statusPenerimaanSaatIni, dense: true, contentPadding: EdgeInsets.zero, activeColor: Colors.black, onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!)),
-              RadioListTile<String>(title: const Text("Sudah Menerima / Sudah Cair"), value: 'Sudah Menerima', groupValue: _statusPenerimaanSaatIni, dense: true, contentPadding: EdgeInsets.zero, activeColor: Colors.black, onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!)),
+              const SizedBox(height: 16),
+              Card(
+                color: const Color(0xFFF8FAFC),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                elevation: 0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Status Penerimaan Saat Ini :",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                      ),
+                      const SizedBox(height: 8),
+                      RadioListTile<String>(
+                        title: const Text("Belum Menerima / Belum Cair"),
+                        value: 'Belum Menerima',
+                        groupValue: _statusPenerimaanSaatIni,
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        activeColor: theme.colorScheme.primary,
+                        onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
+                      ),
+                      RadioListTile<String>(
+                        title: const Text("Sudah Menerima / Sudah Cair"),
+                        value: 'Sudah Menerima',
+                        groupValue: _statusPenerimaanSaatIni,
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        activeColor: theme.colorScheme.primary,
+                        onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
-            const SizedBox(height: 30),
+            const SizedBox(height: 36),
 
             // TOMBOL SIMPAN (DENGAN LOADING PROVIDER)
             SizedBox(
-              width: double.infinity, height: 55,
+              width: double.infinity,
+              height: 54,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2C3E50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 2,
+                ),
                 onPressed: wargaProvider.isLoading ? null : _simpanDataKeFirebase,
                 child: wargaProvider.isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(_isEditMode ? "Simpan Perubahan" : "Simpan Data", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.normal)),
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        _isEditMode ? "Simpan Perubahan" : "Simpan Data Warga",
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) { return Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)); }
-  Widget _buildInputBox({required TextEditingController controller, required String hint, TextInputType keyboardType = TextInputType.text}) {
-    return Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade400)), child: TextField(controller: controller, keyboardType: keyboardType, decoration: InputDecoration(hintText: hint, hintStyle: const TextStyle(color: Colors.grey, fontSize: 14), border: InputBorder.none, isDense: true, contentPadding: const EdgeInsets.symmetric(vertical: 12))));
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w800,
+        color: Color(0xFF1E293B),
+        letterSpacing: 1.1,
+      ),
+    );
+  }
+
+  Widget _buildInputBox({
+    required TextEditingController controller,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          labelText: hint,
+        ),
+      ),
+    );
   }
 }

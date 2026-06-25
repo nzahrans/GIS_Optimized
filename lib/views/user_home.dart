@@ -128,6 +128,7 @@ class _UserHomePageState extends State<UserHomePage> {
                       decoration: const InputDecoration(
                         hintText: "Cari Lokasi Rumah Warga...",
                         border: InputBorder.none,
+                        filled: false,
                         icon: Icon(Icons.search, color: Colors.grey),
                       ),
                       textInputAction: TextInputAction.search,
@@ -185,6 +186,7 @@ class _UserHomePageState extends State<UserHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return WargaInfoSheet(
