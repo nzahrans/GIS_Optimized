@@ -8,11 +8,24 @@ class MapProvider extends ChangeNotifier {
   Set<Polyline> _polylines = {};
   bool _isLoadingRoute = false;
   String? _errorMessage;
+  MapType _currentMapType = MapType.normal;
 
   GoogleMapController? get mapController => _mapController;
   Set<Polyline> get polylines => _polylines;
   bool get isLoadingRoute => _isLoadingRoute;
   String? get errorMessage => _errorMessage;
+  MapType get currentMapType => _currentMapType;
+
+  void toggleMapType() {
+    if (_currentMapType == MapType.normal) {
+      _currentMapType = MapType.hybrid;
+    } else if (_currentMapType == MapType.hybrid) {
+      _currentMapType = MapType.terrain;
+    } else {
+      _currentMapType = MapType.normal;
+    }
+    notifyListeners();
+  }
 
   void setController(GoogleMapController controller) {
     _mapController = controller;

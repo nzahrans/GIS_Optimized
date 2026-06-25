@@ -407,6 +407,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             stream: FirebaseFirestore.instance.collection('warga').snapshots(),
             builder: (context, snapshot) {
               Set<Marker> markers = {};
+              LatLng? selectedLatLng;
               if (snapshot.hasData) {
                 for (var doc in snapshot.data!.docs) {
                   var data = doc.data() as Map<String, dynamic>;
@@ -431,6 +432,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
                     GeoPoint geoPoint = data['lokasi'];
                     bool isSelected = (_selectedDocId == doc.id);
+                    if (isSelected) {
+                      selectedLatLng = LatLng(geoPoint.latitude, geoPoint.longitude);
+                    }
 
                     // Logika pewarnaan marker tematik sesuai proposal
                     double markerHue = BitmapDescriptor.hueBlue; // Default: Tidak menerima bantuan
@@ -455,7 +459,23 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   }
                 }
               }
+
+              Set<Circle> circles = {};
+              if (selectedLatLng != null) {
+                circles.add(
+                  Circle(
+                    circleId: const CircleId('selected_home_highlight'),
+                    center: selectedLatLng,
+                    radius: 20.0, // 20 meter radius
+                    fillColor: const Color(0xFF1E3A8A).withOpacity(0.18),
+                    strokeColor: const Color(0xFF1E3A8A),
+                    strokeWidth: 2,
+                  ),
+                );
+              }
+
               return GoogleMap(
+                mapType: mapProvider.currentMapType,
                 initialCameraPosition: CameraPosition(
                   target: widget.centerOnLocation ?? const LatLng(-6.850071, 107.930230),
                   zoom: 18.0,
@@ -468,10 +488,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   if (_selectedDocId != null) setState(() => _selectedDocId = null);
                 },
                 markers: markers,
+                circles: circles,
                 polylines: mapProvider.polylines,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
+                mapToolbarEnabled: false,
+                padding: const EdgeInsets.only(bottom: 25, left: 10),
               );
             },
           ),
@@ -624,6 +647,21 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 ),
               ),
             ),
+
+          // Tombol Ganti Tipe Peta (Map Type Switcher)
+          Positioned(
+            bottom: mapProvider.polylines.isNotEmpty ? 150 : 90,
+            right: 15,
+            child: FloatingActionButton(
+              heroTag: "btnMapTypeAdmin",
+              mini: true,
+              onPressed: () => mapProvider.toggleMapType(),
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF1E3A8A),
+              tooltip: "Ganti Tipe Peta",
+              child: const Icon(Icons.layers_outlined),
+            ),
+          ),
         ],
       ),
 

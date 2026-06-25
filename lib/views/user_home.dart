@@ -61,12 +61,16 @@ class _UserHomePageState extends State<UserHomePage> {
             stream: FirebaseFirestore.instance.collection('warga').snapshots(),
             builder: (context, snapshot) {
               Set<Marker> markers = {};
+              LatLng? selectedLatLng;
               if (snapshot.hasData) {
                 for (var doc in snapshot.data!.docs) {
                   var data = doc.data() as Map<String, dynamic>;
                   if (data['lokasi'] != null) {
                     GeoPoint geoPoint = data['lokasi'];
                     bool isSelected = (_selectedDocId == doc.id);
+                    if (isSelected) {
+                      selectedLatLng = LatLng(geoPoint.latitude, geoPoint.longitude);
+                    }
 
                     markers.add(
                       Marker(
@@ -81,7 +85,23 @@ class _UserHomePageState extends State<UserHomePage> {
                   }
                 }
               }
+
+              Set<Circle> circles = {};
+              if (selectedLatLng != null) {
+                circles.add(
+                  Circle(
+                    circleId: const CircleId('selected_home_highlight'),
+                    center: selectedLatLng,
+                    radius: 20.0, // 20 meter radius
+                    fillColor: const Color(0xFF1E3A8A).withOpacity(0.18),
+                    strokeColor: const Color(0xFF1E3A8A),
+                    strokeWidth: 2,
+                  ),
+                );
+              }
+
               return GoogleMap(
+                mapType: mapProvider.currentMapType,
                 initialCameraPosition: CameraPosition(
                   target: widget.centerOnLocation ?? const LatLng(-6.850071, 107.930230),
                   zoom: 18.0,
@@ -95,10 +115,13 @@ class _UserHomePageState extends State<UserHomePage> {
                   if (_selectedDocId != null) setState(() => _selectedDocId = null);
                 },
                 markers: markers,
+                circles: circles,
                 polylines: mapProvider.polylines,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
+                mapToolbarEnabled: false,
+                padding: const EdgeInsets.only(bottom: 25, left: 10),
               );
             },
           ),
@@ -247,6 +270,21 @@ class _UserHomePageState extends State<UserHomePage> {
                 ),
               ),
             ),
+
+          // Tombol Ganti Tipe Peta (Map Type Switcher)
+          Positioned(
+            bottom: mapProvider.polylines.isNotEmpty ? 90 : 30,
+            right: 15,
+            child: FloatingActionButton(
+              heroTag: "btnMapTypeUser",
+              mini: true,
+              onPressed: () => mapProvider.toggleMapType(),
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF1E3A8A),
+              tooltip: "Ganti Tipe Peta",
+              child: const Icon(Icons.layers_outlined),
+            ),
+          ),
         ],
       ),
     );
