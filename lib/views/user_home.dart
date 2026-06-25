@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:ui' as ui;
+import 'dart:typed_data';
 import 'search_results.dart';
 import '../providers/map_provider.dart';
 import '../providers/auth_provider.dart';
@@ -22,19 +24,54 @@ class UserHomePage extends StatefulWidget {
 class _UserHomePageState extends State<UserHomePage> {
   String? _selectedDocId;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   bool? _wasLoggedIn;
   String _searchQuery = "";
+
+  BitmapDescriptor? _blueDotIcon;
+  BitmapDescriptor? _redDotIcon;
 
   @override
   void initState() {
     super.initState();
     _selectedDocId = widget.highlightDocId;
+    _initMarkerIcons();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.centerOnLocation != null) {
         context.read<MapProvider>().moveCamera(widget.centerOnLocation!, zoom: 19.0);
       }
     });
+  }
+
+  Future<void> _initMarkerIcons() async {
+    _blueDotIcon = await _createDotIcon(const Color(0xFF1E3A8A), 18);
+    _redDotIcon = await _createDotIcon(Colors.red, 22);
+    if (mounted) setState(() {});
+  }
+
+  Future<BitmapDescriptor> _createDotIcon(Color color, double radius) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    final Paint shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    final Paint paint = Paint()..color = color;
+    final Paint strokePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5;
+
+    canvas.drawCircle(Offset(radius + 4, radius + 5), radius, shadowPaint);
+    canvas.drawCircle(Offset(radius + 4, radius + 4), radius, paint);
+    canvas.drawCircle(Offset(radius + 4, radius + 4), radius, strokePaint);
+
+    final int size = (radius * 2 + 8).toInt();
+    final ui.Image image = await pictureRecorder.endRecording().toImage(size, size);
+    final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
   }
 
   @override
@@ -51,6 +88,7 @@ class _UserHomePageState extends State<UserHomePage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -199,8 +237,8 @@ class _UserHomePageState extends State<UserHomePage> {
                     markerId: MarkerId(doc.id),
                     position: LatLng(geoPoint.latitude, geoPoint.longitude),
                     icon: isSelected
-                        ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)
-                        : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                        ? (_redDotIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed))
+                        : (_blueDotIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)),
                     onTap: () => _showWargaInfo(context, doc.id, data),
                   ),
                 );
@@ -271,6 +309,7 @@ class _UserHomePageState extends State<UserHomePage> {
                               ),
                               child: TextField(
                                 controller: _searchController,
+                                focusNode: _searchFocusNode,
                                 decoration: InputDecoration(
                                   hintText: "Cari Warga",
                                   filled: false,
@@ -507,6 +546,8 @@ class _UserHomePageState extends State<UserHomePage> {
       },
     ).whenComplete(() {
       setState(() => _selectedDocId = null);
+      _searchFocusNode.unfocus();
+      FocusScope.of(context).unfocus();
     });
   }
 

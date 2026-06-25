@@ -3,6 +3,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:ui' as ui;
+import 'dart:typed_data';
 import 'form_warga.dart';
 import 'search_results.dart';
 import 'login_page.dart';
@@ -26,11 +28,63 @@ class _AdminHomePageState extends State<AdminHomePage> {
   bool _isDashboardExpanded = false;
   String? _activeFilter;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = "";
+
+  BitmapDescriptor? _blueDotIcon;
+  BitmapDescriptor? _greenDotIcon;
+  BitmapDescriptor? _redDotIcon;
+  BitmapDescriptor? _purpleDotIcon;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDocId = widget.highlightDocId;
+    _initMarkerIcons();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.centerOnLocation != null) {
+        context.read<MapProvider>().moveCamera(widget.centerOnLocation!, zoom: 19.0);
+      }
+    });
+  }
+
+  Future<void> _initMarkerIcons() async {
+    _blueDotIcon = await _createDotIcon(const Color(0xFF1E3A8A), 18);
+    _greenDotIcon = await _createDotIcon(Colors.green, 18);
+    _redDotIcon = await _createDotIcon(Colors.red, 18);
+    _purpleDotIcon = await _createDotIcon(Colors.purple, 22);
+    if (mounted) setState(() {});
+  }
+
+  Future<BitmapDescriptor> _createDotIcon(Color color, double radius) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    final Paint shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    final Paint paint = Paint()..color = color;
+    final Paint strokePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5;
+
+    canvas.drawCircle(Offset(radius + 4, radius + 5), radius, shadowPaint);
+    canvas.drawCircle(Offset(radius + 4, radius + 4), radius, paint);
+    canvas.drawCircle(Offset(radius + 4, radius + 4), radius, strokePaint);
+
+    final int size = (radius * 2 + 8).toInt();
+    final ui.Image image = await pictureRecorder.endRecording().toImage(size, size);
+    final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -164,17 +218,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedDocId = widget.highlightDocId;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.centerOnLocation != null) {
-        context.read<MapProvider>().moveCamera(widget.centerOnLocation!, zoom: 19.0);
-      }
-    });
-  }
 
   // --- FUNGSI BUKA GOOGLE MAPS EKSTERNAL ---
   Future<void> _openExternalMap(double lat, double lng) async {
@@ -547,22 +591,39 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 }
 
                 // Logika pewarnaan marker tematik sesuai proposal
-                double markerHue = BitmapDescriptor.hueBlue; // Default: Tidak menerima bantuan
-                if (data['menerima_bantuan'] == 'Ya') {
+                BitmapDescriptor? markerIcon;
+                if (isSelected) {
+                  markerIcon = _purpleDotIcon;
+                } else if (data['menerima_bantuan'] == 'Ya') {
                   if (data['status_cair'] == 'Sudah Menerima') {
-                    markerHue = BitmapDescriptor.hueGreen;
+                    markerIcon = _greenDotIcon;
                   } else {
-                    markerHue = BitmapDescriptor.hueRed;
+                    markerIcon = _redDotIcon;
                   }
+                } else {
+                  markerIcon = _blueDotIcon;
+                }
+
+                // Fallback jika asinkron belum selesai memuat
+                if (markerIcon == null) {
+                  double markerHue = BitmapDescriptor.hueBlue;
+                  if (isSelected) {
+                    markerHue = BitmapDescriptor.hueViolet;
+                  } else if (data['menerima_bantuan'] == 'Ya') {
+                    if (data['status_cair'] == 'Sudah Menerima') {
+                      markerHue = BitmapDescriptor.hueGreen;
+                    } else {
+                      markerHue = BitmapDescriptor.hueRed;
+                    }
+                  }
+                  markerIcon = BitmapDescriptor.defaultMarkerWithHue(markerHue);
                 }
 
                 markers.add(
                   Marker(
                     markerId: MarkerId(doc.id),
                     position: LatLng(geoPoint.latitude, geoPoint.longitude),
-                    icon: isSelected
-                        ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet)
-                        : BitmapDescriptor.defaultMarkerWithHue(markerHue),
+                    icon: markerIcon,
                     onTap: () => _showAdminWargaInfo(context, doc.id, data),
                   ),
                 );
@@ -637,6 +698,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   ),
                                   child: TextField(
                                     controller: _searchController,
+                                    focusNode: _searchFocusNode,
                                     decoration: InputDecoration(
                                       hintText: "Cari Data Warga",
                                       filled: false,
@@ -893,6 +955,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
       },
     ).whenComplete(() {
       setState(() => _selectedDocId = null);
+      _searchFocusNode.unfocus();
+      FocusScope.of(context).unfocus();
     });
   }
 
