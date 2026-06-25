@@ -154,7 +154,7 @@ class WargaInfoSheet extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       icon: const Icon(Icons.map_outlined, size: 18),
-                      label: const Text("Rute Internal", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      label: const Text("Tampilkan Rute", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                       onPressed: onRoutePressed,
                     ),
                   ),
