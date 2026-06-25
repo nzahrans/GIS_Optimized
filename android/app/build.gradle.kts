@@ -25,7 +25,7 @@ android {
         applicationId = "com.skripsi.gis"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21 // MinSdk disarankan 21 atau lebih untuk mendukung Google Maps SDK
+        minSdk = flutter.minSdkVersion // MinSdk disarankan 21 atau lebih untuk mendukung Google Maps SDK
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
