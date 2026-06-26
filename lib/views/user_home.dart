@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'search_results.dart';
 import '../providers/map_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart'; // Import ThemeProvider
 import '../widgets/warga_info_sheet.dart';
 import '../utils/date_formatter.dart';
 
@@ -93,7 +94,7 @@ class _UserHomePageState extends State<UserHomePage> {
     super.dispose();
   }
 
-  Widget _buildSuggestionsList(BuildContext context, List<DocumentSnapshot> docs, bool isAdminPage) {
+  Widget _buildSuggestionsList(BuildContext context, List<DocumentSnapshot> docs, bool isAdminPage, bool isDark) {
     final query = _searchQuery.toLowerCase().trim();
     final suggestions = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
@@ -106,9 +107,9 @@ class _UserHomePageState extends State<UserHomePage> {
     }).toList();
 
     if (suggestions.isEmpty) {
-      return const ListTile(
-        leading: Icon(Icons.search_off, color: Colors.grey),
-        title: Text("Tidak ada hasil cocok", style: TextStyle(color: Colors.grey)),
+      return ListTile(
+        leading: const Icon(Icons.search_off, color: Colors.grey),
+        title: const Text("Tidak ada hasil cocok", style: TextStyle(color: Colors.grey)),
       );
     }
 
@@ -119,12 +120,12 @@ class _UserHomePageState extends State<UserHomePage> {
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.zero,
       itemCount: displayList.length + (suggestions.length > 5 ? 1 : 0),
-      separatorBuilder: (context, index) => Divider(height: 1, color: Colors.white.withOpacity(0.08)),
+      separatorBuilder: (context, index) => Divider(height: 1, color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.withOpacity(0.2)),
       itemBuilder: (context, index) {
         if (index == displayList.length) {
           return ListTile(
             dense: true,
-            tileColor: const Color(0xFF0F172A),
+            tileColor: isDark ? const Color(0xFF0F172A) : Colors.blue.withOpacity(0.05),
             title: Text(
               "Lihat semua hasil untuk '$_searchQuery'...",
               style: const TextStyle(
@@ -171,10 +172,10 @@ class _UserHomePageState extends State<UserHomePage> {
           ),
           title: Text(
             nama,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isDark ? Colors.white : Colors.black87),
           ),
           subtitle: blok.toString().isNotEmpty
-              ? Text("Blok $blok", style: const TextStyle(fontSize: 11))
+              ? Text("Blok $blok", style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54))
               : null,
           onTap: () {
             _searchController.clear();
@@ -198,7 +199,7 @@ class _UserHomePageState extends State<UserHomePage> {
 
   // --- FUNGSI BUKA GOOGLE MAPS EKSTERNAL ---
   Future<void> _openExternalMap(double lat, double lng) async {
-    final Uri googleMapsUrl = Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng");
+    final Uri googleMapsUrl = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving");
 
     if (!await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication)) {
       if (mounted) {
@@ -210,10 +211,44 @@ class _UserHomePageState extends State<UserHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final mapProvider = context.watch<MapProvider>();
     final authProvider = context.watch<AuthProvider>();
     final isLoggedInWarga = authProvider.isLoggedIn && (authProvider.user?.email ?? '').endsWith('@warga.sigbansos.com');
-
+    
+    // DETEKSI TEMA
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mapProvider = context.watch<MapProvider>();
+    //final String activeMapId = '3a650f80a137987b730a3339';
+    //debugPrint("Current Theme isDark: $isDark | Active Map ID: $activeMapId");
+    /*final String darkStyle = '''
+    [
+      // 1. Tanah Dasar (Hitam Sangat Gelap)
+      { "elementType": "geometry", "stylers": [{ "color": "#0d1117" }] },
+      { "elementType": "labels.text.fill", "stylers": [{ "color": "#8b96a5" }] },
+      { "elementType": "labels.text.stroke", "stylers": [{ "color": "#0d1117" }] },
+      
+      // 2. Blok Bangunan/Pemukiman (Dibuat TERANG agar sangat kontras)
+      { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#304052" }] },
+      // Tetap paksa stroke warna putih terang jaga-jaga jika ada data poligon bangunan
+      { "featureType": "landscape.man_made", "elementType": "geometry.stroke", "stylers": [{ "color": "#ffffff" }, { "weight": 2.0 }] },
+      
+      // 3. Dataran/Hutan (Hijau Gelap)
+      { "featureType": "landscape.natural", "elementType": "geometry.fill", "stylers": [{ "color": "#121f16" }] },
+      
+      // 4. Jalan (Dibuat lebih biru agar beda dengan bangunan)
+      { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#1e2b3c" }] },
+      { "featureType": "road.local", "elementType": "geometry.fill", "stylers": [{ "color": "#4a6280" }] },
+      { "featureType": "road", "elementType": "geometry.stroke", "stylers": [{ "visibility": "off" }] },
+      
+      // 5. Perairan (Biru Navy)
+      { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#0a1d36" }] },
+      { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#5a7a9e" }] },
+      
+      // 6. POI (Tetap nyala)
+      { "featureType": "poi", "stylers": [{ "visibility": "on" }] },
+      { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#d59563" }] }
+    ]
+    ''';*/
+    
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('warga').snapshots(),
@@ -268,7 +303,7 @@ class _UserHomePageState extends State<UserHomePage> {
                   target: widget.centerOnLocation ?? const LatLng(-6.850071, 107.930230),
                   zoom: 18.0,
                 ),
-                onMapCreated: (controller) {
+                onMapCreated: (GoogleMapController controller) {
                   context.read<MapProvider>().setController(controller);
                 },
                 onTap: (point) {
@@ -281,7 +316,7 @@ class _UserHomePageState extends State<UserHomePage> {
                 myLocationEnabled: true,
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
-                mapToolbarEnabled: false,
+                mapToolbarEnabled: true,
                 padding: const EdgeInsets.only(bottom: 25, left: 10),
               ),
 
@@ -302,29 +337,29 @@ class _UserHomePageState extends State<UserHomePage> {
                                 filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF1E293B).withOpacity(0.85),
+                                    color: isDark ? const Color(0xFF1E293B).withOpacity(0.85) : Colors.white.withOpacity(0.95),
                                     borderRadius: BorderRadius.circular(30),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.12),
+                                      color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
                                       width: 1.5,
                                     ),
+                                    boxShadow: [
+                                      if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))
+                                    ]
                                   ),
                                   child: TextField(
                                     controller: _searchController,
                                     focusNode: _searchFocusNode,
-                                    style: const TextStyle(color: Colors.white),
+                                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                                     decoration: InputDecoration(
                                       hintText: "Cari Warga",
-                                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                      hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.5) : Colors.grey),
                                       filled: false,
-                                      prefixIcon: const Padding(
-                                        padding: EdgeInsets.only(
-                                          left: 15,
-                                          right: 10,
-                                        ),
+                                      prefixIcon: Padding(
+                                        padding: const EdgeInsets.only(left: 15, right: 10),
                                         child: Icon(
                                           Icons.search,
-                                          color: Colors.white70,
+                                          color: isDark ? Colors.white70 : Colors.grey[700],
                                         ),
                                       ),
                                       suffixIcon: _searchQuery.isNotEmpty
@@ -335,9 +370,9 @@ class _UserHomePageState extends State<UserHomePage> {
                                                   _searchQuery = "";
                                                 });
                                               },
-                                              child: const Icon(
+                                              child: Icon(
                                                 Icons.clear,
-                                                color: Colors.white70,
+                                                color: isDark ? Colors.white70 : Colors.grey[700],
                                               ),
                                             )
                                           : null,
@@ -346,25 +381,16 @@ class _UserHomePageState extends State<UserHomePage> {
                                         horizontal: 15,
                                       ),
                                       border: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(30),
-                                        ),
+                                        borderRadius: BorderRadius.all(Radius.circular(30)),
                                         borderSide: BorderSide.none,
                                       ),
                                       enabledBorder: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(30),
-                                        ),
+                                        borderRadius: BorderRadius.all(Radius.circular(30)),
                                         borderSide: BorderSide.none,
                                       ),
                                       focusedBorder: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(30),
-                                        ),
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF3B82F6),
-                                          width: 1.8,
-                                        ),
+                                        borderRadius: BorderRadius.all(Radius.circular(30)),
+                                        borderSide: BorderSide(color: Color(0xFF3B82F6), width: 1.8),
                                       ),
                                     ),
                                     textInputAction: TextInputAction.search,
@@ -405,14 +431,14 @@ class _UserHomePageState extends State<UserHomePage> {
                                   filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF1E293B).withOpacity(0.95),
+                                      color: isDark ? const Color(0xFF1E293B).withOpacity(0.95) : Colors.white.withOpacity(0.98),
                                       borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.5),
+                                      border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3), width: 1.5),
                                     ),
                                     constraints: const BoxConstraints(maxHeight: 250),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(16),
-                                      child: _buildSuggestionsList(context, allWargaDocs, false),
+                                      child: _buildSuggestionsList(context, allWargaDocs, false, isDark),
                                     ),
                                   ),
                                 ),
@@ -423,35 +449,49 @@ class _UserHomePageState extends State<UserHomePage> {
                       ),
 
                       const SizedBox(width: 10),
+                      const SizedBox(width: 10),
+
+                      // --- TOMBOL GANTI TEMA ---
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Material(
+                          elevation: 5,
+                          shape: const CircleBorder(),
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          child: CircleAvatar(
+                            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            child: IconButton(
+                              icon: Icon(
+                                isDark ? Icons.light_mode : Icons.dark_mode,
+                                color: isDark ? Colors.amber : Colors.blue[800],
+                              ),
+                              tooltip: "Ganti Tema",
+                              onPressed: () => context.read<ThemeProvider>().toggleTheme(!isDark),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(width: 8), // Jarak ke tombol Profil/Logout
 
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0),
                         child: Material(
                           elevation: 5,
                           shape: const CircleBorder(),
-                          color: const Color(0xFF1E293B),
+                          color: isDark ? const Color(0xFF1E293B) : Colors.blue[600],
                           child: CircleAvatar(
-                            backgroundColor: const Color(0xFF1E293B),
+                            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.blue[600],
                             child: isLoggedInWarga
                                 ? IconButton(
-                                    icon: const Icon(
-                                      Icons.person,
-                                      color: Colors.white,
-                                    ),
+                                    icon: const Icon(Icons.person, color: Colors.white),
                                     tooltip: "Profil Saya",
-                                    onPressed: () => _showProfilWarga(
-                                      context,
-                                      authProvider.user!.email!,
-                                    ),
+                                    onPressed: () => _showProfilWarga(context, authProvider.user!.email!),
                                   )
                                 : IconButton(
-                                    icon: const Icon(
-                                      Icons.login,
-                                      color: Colors.white,
-                                    ),
+                                    icon: const Icon(Icons.login, color: Colors.white),
                                     tooltip: "Login",
-                                    onPressed: () =>
-                                        Navigator.pushNamed(context, '/login'),
+                                    onPressed: () => Navigator.pushNamed(context, '/login'),
                                   ),
                           ),
                         ),
@@ -476,10 +516,11 @@ class _UserHomePageState extends State<UserHomePage> {
 
               // Indikator Loading Rute
               if (mapProvider.isLoadingRoute)
-                const Center(
+                Center(
                   child: Card(
+                    color: Theme.of(context).colorScheme.surface,
                     elevation: 4,
-                    child: Padding(
+                    child: const Padding(
                       padding: EdgeInsets.all(20.0),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -501,8 +542,8 @@ class _UserHomePageState extends State<UserHomePage> {
                   heroTag: "btnMapTypeUser",
                   mini: true,
                   onPressed: () => mapProvider.toggleMapType(),
-                  backgroundColor: const Color(0xFF1E293B),
-                  foregroundColor: Colors.white,
+                  backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  foregroundColor: isDark ? Colors.white : Colors.black87,
                   tooltip: "Ganti Tipe Peta",
                   child: const Icon(Icons.layers_outlined),
                 ),
@@ -521,6 +562,7 @@ class _UserHomePageState extends State<UserHomePage> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return WargaInfoSheet(
@@ -557,8 +599,8 @@ class _UserHomePageState extends State<UserHomePage> {
 
   void _showProfilWarga(BuildContext context, String email) {
     final String nik = email.split('@')[0];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Inisialisasi stream di luar builder agar tidak di-recreate
     final Stream<QuerySnapshot> profileStream = FirebaseFirestore.instance
         .collection('warga')
         .where('nik', isEqualTo: nik)
@@ -568,6 +610,7 @@ class _UserHomePageState extends State<UserHomePage> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -638,7 +681,7 @@ class _UserHomePageState extends State<UserHomePage> {
                         data['nama'] ?? 'Tanpa Nama',
                         style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                       ),
-                      const Text("Akun Resmi Warga Tegalsari RT 02 RW 02", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      const Text("Akun Resmi Warga Tegalsari", style: TextStyle(color: Colors.grey, fontSize: 12)),
                       const Divider(height: 24),
                       const Text(
                         "DATA KEPENDUDUKAN",
@@ -652,7 +695,7 @@ class _UserHomePageState extends State<UserHomePage> {
                       const SizedBox(height: 24),
 
                       const Text(
-                        "STATUS BANTUAN SOSIAL SAAT INI",
+                        "STATUS BANTUAN SOSIAL (BANSOS)",
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey, letterSpacing: 1.1),
                       ),
                       const SizedBox(height: 8),
@@ -660,13 +703,13 @@ class _UserHomePageState extends State<UserHomePage> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: data['menerima_bantuan'] == 'Ya'
-                              ? Colors.green.withOpacity(0.05)
-                              : Colors.grey.withOpacity(0.05),
+                              ? Colors.green.withOpacity(isDark ? 0.1 : 0.05)
+                              : Colors.grey.withOpacity(isDark ? 0.1 : 0.05),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: data['menerima_bantuan'] == 'Ya'
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.grey.withOpacity(0.1),
+                                ? Colors.green.withOpacity(isDark ? 0.3 : 0.1)
+                                : Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
                           ),
                         ),
                         child: Column(
@@ -735,9 +778,9 @@ class _UserHomePageState extends State<UserHomePage> {
 
                                 return ListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  leading: const CircleAvatar(
-                                    backgroundColor: Color(0xFFDCFCE7),
-                                    child: Icon(Icons.check_circle, color: Colors.green),
+                                  leading: CircleAvatar(
+                                    backgroundColor: isDark ? Colors.green.withOpacity(0.2) : const Color(0xFFDCFCE7),
+                                    child: const Icon(Icons.check_circle, color: Colors.green),
                                   ),
                                   title: Text(
                                     "Bantuan $jenisBantuan",
@@ -749,7 +792,7 @@ class _UserHomePageState extends State<UserHomePage> {
                                       "Diterima pada: $tanggalFormat",
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.green[800],
+                                        color: isDark ? Colors.green[400] : Colors.green[800],
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -775,7 +818,6 @@ class _UserHomePageState extends State<UserHomePage> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: () {
-                                debugPrint('[WargaProfile] Menampilkan dialog Ubah Password...');
                                 _showUbahPasswordDialog(context);
                               },
                               icon: const Icon(Icons.lock_reset),
@@ -792,10 +834,8 @@ class _UserHomePageState extends State<UserHomePage> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: () async {
-                                debugPrint('[WargaProfile] Melakukan aksi Keluar Sesi/Logout...');
                                 Navigator.pop(context);
                                 await context.read<AuthProvider>().signOut();
-                                debugPrint('[WargaProfile] Logout berhasil.');
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text("Berhasil keluar dari akun warga")),
@@ -854,12 +894,13 @@ class _UserHomePageState extends State<UserHomePage> {
         return StatefulBuilder(
           builder: (dialogContext, setState) {
             return AlertDialog(
+              backgroundColor: Theme.of(context).colorScheme.surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Row(
+              title: Row(
                 children: [
-                  Icon(Icons.lock_outline, color: Color(0xFF1E3A8A)),
-                  SizedBox(width: 8),
-                  Text("Ubah Password", style: TextStyle(fontWeight: FontWeight.bold)),
+                  Icon(Icons.lock_outline, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  const Text("Ubah Password", style: TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
               content: SingleChildScrollView(
@@ -949,31 +990,26 @@ class _UserHomePageState extends State<UserHomePage> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: isLoading
                       ? null
                       : () async {
-                          debugPrint('[ChangePassword] Tombol Simpan ditekan.');
                           if (formKey.currentState!.validate()) {
-                            debugPrint('[ChangePassword] Form validasi berhasil.');
                             setState(() {
                               isLoading = true;
                               dialogErrorMessage = null;
                             });
                             try {
                               final user = FirebaseAuth.instance.currentUser;
-                              debugPrint('[ChangePassword] Pengguna aktif: ${user?.email}');
                               if (user != null) {
-                                debugPrint('[ChangePassword] Mengirim request updatePassword ke Firebase Auth...');
                                 await user.updatePassword(newPasswordController.text);
-                                debugPrint('[ChangePassword] Sukses memperbarui password.');
                                 if (parentContext.mounted) {
                                   final messenger = ScaffoldMessenger.of(parentContext);
-                                  Navigator.pop(dialogContext);
-                                  Navigator.pop(parentContext);
+                                  Navigator.pop(dialogContext); // Tutup dialog Ubah Password
+                                  Navigator.pop(parentContext); // Tutup bottom sheet Profil
                                   messenger.showSnackBar(
                                     const SnackBar(
                                       content: Text("Password berhasil diperbarui!"),
@@ -988,7 +1024,6 @@ class _UserHomePageState extends State<UserHomePage> {
                                 );
                               }
                             } on FirebaseAuthException catch (e) {
-                              debugPrint('[ChangePassword] FirebaseAuthException: [${e.code}] ${e.message}');
                               String errMsg = "Gagal memperbarui password: ${e.message}";
                               if (e.code == 'requires-recent-login') {
                                 errMsg = "Sesi Anda sudah kedaluwarsa demi keamanan. Silakan keluar (logout) dan login kembali sebelum mengubah password.";
@@ -997,15 +1032,12 @@ class _UserHomePageState extends State<UserHomePage> {
                                 dialogErrorMessage = errMsg;
                               });
                             } catch (e) {
-                              debugPrint('[ChangePassword] Generic Exception: $e');
                               setState(() {
                                 dialogErrorMessage = "Terjadi kesalahan: $e";
                               });
                             } finally {
                               setState(() => isLoading = false);
                             }
-                          } else {
-                            debugPrint('[ChangePassword] Form validasi gagal (salah satu input tidak valid).');
                           }
                         },
                   child: isLoading

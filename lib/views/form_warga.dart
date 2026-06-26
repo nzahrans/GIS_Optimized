@@ -10,7 +10,6 @@ import '../models/warga.dart';
 import '../providers/warga_provider.dart';
 
 class FormWargaPage extends StatefulWidget {
-  /// Jika [docId] tidak null, halaman berjalan dalam mode edit.
   final String? docId;
   final Map<String, dynamic>? existingData;
 
@@ -21,7 +20,6 @@ class FormWargaPage extends StatefulWidget {
 }
 
 class _FormWargaPageState extends State<FormWargaPage> {
-  // --- CONTROLLERS ---
   final _kkController = TextEditingController();
   final _nikController = TextEditingController();
   final _namaController = TextEditingController();
@@ -29,19 +27,17 @@ class _FormWargaPageState extends State<FormWargaPage> {
   final _koordinatController = TextEditingController();
   final _jenisBantuanController = TextEditingController();
 
-  // --- STATE VARIABLES ---
   String _apakahMenerimaBantuan = 'Tidak';
   String _statusPenerimaanSaatIni = 'Belum Menerima';
   LatLng? _lokasiTerpilih;
   File? _fotoRumah;
-  String? _existingFotoUrl; // URL foto lama saat edit
+  String? _existingFotoUrl; 
 
   bool get _isEditMode => widget.docId != null;
 
   @override
   void initState() {
     super.initState();
-    // Pre-fill form saat mode edit
     if (_isEditMode && widget.existingData != null) {
       final d = widget.existingData!;
       _kkController.text = d['no_kk'] ?? '';
@@ -71,18 +67,13 @@ class _FormWargaPageState extends State<FormWargaPage> {
     super.dispose();
   }
 
-  // --- FUNGSI GPS ---
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aktifkan GPS pada HP Anda!')),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Aktifkan GPS pada HP Anda!')));
       return;
     }
 
@@ -90,53 +81,31 @@ class _FormWargaPageState extends State<FormWargaPage> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak')));
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak')));
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Izin lokasi ditolak permanen. Buka pengaturan.'),
-          ),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak permanen. Buka pengaturan.')));
       return;
     }
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Sedang mencari titik koordinat...")),
-      );
-    }
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sedang mencari titik koordinat...")));
 
-    Position position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-    );
+    Position position = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
 
     setState(() {
       _lokasiTerpilih = LatLng(position.latitude, position.longitude);
       _koordinatController.text = "${position.latitude}, ${position.longitude}";
     });
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lokasi GPS berhasil ditemukan!")),
-      );
-    }
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lokasi GPS berhasil ditemukan!")));
   }
 
-  // --- FUNGSI AMBIL FOTO ---
   Future<void> _ambilFoto(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
-    final XFile? photo = await picker.pickImage(
-      source: source,
-      imageQuality: 50,
-    ); // Kompres 50%
+    final XFile? photo = await picker.pickImage(source: source, imageQuality: 50);
 
     if (photo != null) {
       setState(() {
@@ -148,9 +117,8 @@ class _FormWargaPageState extends State<FormWargaPage> {
   void _showImageSourceOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return SafeArea(
           child: Wrap(
@@ -178,55 +146,35 @@ class _FormWargaPageState extends State<FormWargaPage> {
     );
   }
 
-  // --- VALIDASI NIK/KK ---
   bool _isValid16Digit(String value) {
     final trimmed = value.trim();
     return trimmed.length == 16 && RegExp(r'^\d+$').hasMatch(trimmed);
   }
 
-  // --- LOGIKA SIMPAN KE FIREBASE (CORE via WargaProvider) ---
   Future<void> _simpanDataKeFirebase() async {
-    // 1. Validasi Kelengkapan
-    if (_kkController.text.trim().isEmpty ||
-        _nikController.text.trim().isEmpty ||
-        _namaController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap lengkapi data Identitas!")),
-      );
+    if (_kkController.text.trim().isEmpty || _nikController.text.trim().isEmpty || _namaController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Harap lengkapi data Identitas!")));
       return;
     }
-
-    // 2. Validasi Format NIK & No. KK
     if (!_isValid16Digit(_nikController.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("NIK harus tepat 16 digit angka!")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("NIK harus tepat 16 digit angka!")));
       return;
     }
     if (!_isValid16Digit(_kkController.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No. KK harus tepat 16 digit angka!")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No. KK harus tepat 16 digit angka!")));
       return;
     }
-
     if (_lokasiTerpilih == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap tentukan lokasi rumah!")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Harap tentukan lokasi rumah!")));
       return;
     }
-    if (_apakahMenerimaBantuan == 'Ya' &&
-        _jenisBantuanController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Harap isi Jenis Bantuan!")));
+    if (_apakahMenerimaBantuan == 'Ya' && _jenisBantuanController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Harap isi Jenis Bantuan!")));
       return;
     }
 
     final wargaProvider = context.read<WargaProvider>();
 
-    // 3. Validasi duplikasi NIK dan KK melalui provider
     final valid = await wargaProvider.checkDuplikasi(
       _nikController.text,
       _kkController.text,
@@ -234,34 +182,18 @@ class _FormWargaPageState extends State<FormWargaPage> {
     );
 
     if (!valid) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              wargaProvider.errorMessage ?? "Duplikasi data terdeteksi",
-            ),
-          ),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(wargaProvider.errorMessage ?? "Duplikasi data terdeteksi")));
       return;
     }
 
-    final newStatus = _apakahMenerimaBantuan == 'Ya'
-        ? _statusPenerimaanSaatIni
-        : '-';
-
+    final newStatus = _apakahMenerimaBantuan == 'Ya' ? _statusPenerimaanSaatIni : '-';
     DateTime? tanggalDiterima;
-    bool shouldAddHistory = false; // Flag pelacak riwayat subcollection
+    bool shouldAddHistory = false; 
 
     if (newStatus == 'Sudah Menerima') {
-      final oldStatus = widget.existingData != null
-          ? (widget.existingData!['status_cair'] ?? 'Belum Menerima')
-          : 'Belum Menerima';
-
+      final oldStatus = widget.existingData != null ? (widget.existingData!['status_cair'] ?? 'Belum Menerima') : 'Belum Menerima';
       if (oldStatus == 'Sudah Menerima') {
-        // Jika sebelumnya sudah menerima, pertahankan tanggal yang lama jika ada
-        if (widget.existingData != null &&
-            widget.existingData!['tanggal_diterima'] != null) {
+        if (widget.existingData != null && widget.existingData!['tanggal_diterima'] != null) {
           final dynamic rawDate = widget.existingData!['tanggal_diterima'];
           if (rawDate is Timestamp) {
             tanggalDiterima = rawDate.toDate();
@@ -269,19 +201,15 @@ class _FormWargaPageState extends State<FormWargaPage> {
             tanggalDiterima = rawDate;
           }
         }
-        // Jika tidak ada tanggal lama, set sekarang sebagai fallback
         tanggalDiterima ??= DateTime.now();
       } else {
-        // Perubahan status dari belum ke sudah, catat tanggal saat ini dan trigger simpan riwayat
         tanggalDiterima = DateTime.now();
         shouldAddHistory = true;
       }
     } else {
-      // Jika statusnya bukan "Sudah Menerima", maka tidak ada tanggal diterima
       tanggalDiterima = null;
     }
 
-    // 4. Instansiasi objek Warga
     final warga = Warga(
       id: widget.docId ?? '',
       nama: _namaController.text.trim(),
@@ -290,42 +218,26 @@ class _FormWargaPageState extends State<FormWargaPage> {
       blok: _blokController.text.trim(),
       koordinat: _lokasiTerpilih!,
       menerimaBantuan: _apakahMenerimaBantuan,
-      jenisBantuan: _apakahMenerimaBantuan == 'Ya'
-          ? _jenisBantuanController.text.trim()
-          : '-',
+      jenisBantuan: _apakahMenerimaBantuan == 'Ya' ? _jenisBantuanController.text.trim() : '-',
       statusBansos: newStatus,
       fotoUrl: _existingFotoUrl ?? '',
       tanggalDiterima: tanggalDiterima,
     );
 
-    // 5. Eksekusi tambah atau update data
     bool success;
     if (_isEditMode) {
-      success = await wargaProvider.updateWarga(
-        widget.docId!,
-        warga,
-        _fotoRumah,
-        shouldAddHistory: shouldAddHistory, // Lewatkan parameter riwayat ke provider
-      );
+      success = await wargaProvider.updateWarga(widget.docId!, warga, _fotoRumah, shouldAddHistory: shouldAddHistory);
     } else {
       success = await wargaProvider.addWarga(warga, _fotoRumah);
     }
 
     if (mounted) {
       if (success) {
-        final msg = _isEditMode
-            ? "Data berhasil diperbarui!"
-            : "Alhamdulillah! Data Berhasil Disimpan.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        final msg = _isEditMode ? "Data berhasil diperbarui!" : "Alhamdulillah! Data Berhasil Disimpan.";
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(wargaProvider.errorMessage ?? "Gagal menyimpan data"),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(wargaProvider.errorMessage ?? "Gagal menyimpan data")));
       }
     }
   }
@@ -334,25 +246,23 @@ class _FormWargaPageState extends State<FormWargaPage> {
   Widget build(BuildContext context) {
     final wargaProvider = context.watch<WargaProvider>();
     final theme = Theme.of(context);
+    
+    // DETEKSI TEMA
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           _isEditMode ? "Edit Data Warga" : "Tambah Warga Baru",
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle("1. INFORMASI KEPALA KELUARGA"),
+            _buildSectionTitle("1. INFORMASI KEPALA KELUARGA", isDark),
             const SizedBox(height: 16),
             _buildInputBox(
               controller: _kkController,
@@ -374,22 +284,18 @@ class _FormWargaPageState extends State<FormWargaPage> {
             ),
             const SizedBox(height: 24),
 
-            _buildSectionTitle("2. LOKASI RUMAH"),
+            _buildSectionTitle("2. LOKASI RUMAH", isDark),
             const SizedBox(height: 16),
             GestureDetector(
               onTap: () async {
                 final LatLng? result = await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        PickMapPage(initialCenter: _lokasiTerpilih),
-                  ),
+                  MaterialPageRoute(builder: (context) => PickMapPage(initialCenter: _lokasiTerpilih)),
                 );
                 if (result != null) {
                   setState(() {
                     _lokasiTerpilih = result;
-                    _koordinatController.text =
-                        "${result.latitude}, ${result.longitude}";
+                    _koordinatController.text = "${result.latitude}, ${result.longitude}";
                   });
                 }
               },
@@ -397,39 +303,37 @@ class _FormWargaPageState extends State<FormWargaPage> {
                 height: 140,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  // WARNA DINAMIS
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: _lokasiTerpilih != null
                         ? theme.colorScheme.primary
-                        : const Color(0xFF334155),
+                        : (isDark ? const Color(0xFF334155) : Colors.grey[300]!),
                     width: 1.5,
                   ),
+                  boxShadow: [
+                    if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                  ],
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      _lokasiTerpilih == null
-                          ? Icons.map_outlined
-                          : Icons.add_location_alt_rounded,
+                      _lokasiTerpilih == null ? Icons.map_outlined : Icons.add_location_alt_rounded,
                       size: 44,
                       color: _lokasiTerpilih != null
                           ? theme.colorScheme.primary
-                          : const Color(0xFF94A3B8),
+                          : (isDark ? const Color(0xFF94A3B8) : Colors.grey[400]),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _lokasiTerpilih == null
-                          ? "Ketuk untuk Menyesuaikan Titik di Peta"
-                          : "Lokasi Rumah Berhasil Ditentukan!",
+                      _lokasiTerpilih == null ? "Ketuk untuk Menyesuaikan Titik di Peta" : "Lokasi Rumah Berhasil Ditentukan!",
                       style: TextStyle(
                         color: _lokasiTerpilih != null
                             ? theme.colorScheme.primary
-                            : const Color(0xFF94A3B8),
-                        fontWeight: _lokasiTerpilih != null
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+                            : (isDark ? const Color(0xFF94A3B8) : Colors.grey[600]),
+                        fontWeight: _lokasiTerpilih != null ? FontWeight.w600 : FontWeight.normal,
                         fontSize: 14,
                       ),
                     ),
@@ -456,30 +360,21 @@ class _FormWargaPageState extends State<FormWargaPage> {
                   height: 54,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary.withOpacity(
-                        0.1,
-                      ),
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                       foregroundColor: theme.colorScheme.primary,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: wargaProvider.isLoading
-                        ? null
-                        : () => _getCurrentLocation(),
+                    onPressed: wargaProvider.isLoading ? null : () => _getCurrentLocation(),
                     icon: const Icon(Icons.gps_fixed, size: 18),
-                    label: const Text(
-                      "GPS",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    label: const Text("GPS", style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
 
-            _buildSectionTitle("3. FOTO RUMAH"),
+            _buildSectionTitle("3. FOTO RUMAH", isDark),
             const SizedBox(height: 16),
             GestureDetector(
               onTap: _showImageSourceOptions,
@@ -487,35 +382,35 @@ class _FormWargaPageState extends State<FormWargaPage> {
                 height: 180,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: _fotoRumah != null
                         ? theme.colorScheme.secondary
-                        : const Color(0xFF334155),
+                        : (isDark ? const Color(0xFF334155) : Colors.grey[300]!),
                     width: 1.5,
                   ),
+                  boxShadow: [
+                    if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                  ],
                   image: _fotoRumah != null
-                      ? DecorationImage(
-                          image: FileImage(_fotoRumah!),
-                          fit: BoxFit.cover,
-                        )
+                      ? DecorationImage(image: FileImage(_fotoRumah!), fit: BoxFit.cover)
                       : null,
                 ),
                 child: _fotoRumah == null
-                    ? const Column(
+                    ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.camera_alt_outlined,
                             size: 44,
-                            color: Color(0xFF94A3B8),
+                            color: isDark ? const Color(0xFF94A3B8) : Colors.grey[400],
                           ),
                           const SizedBox(height: 8),
                           Text(
                             "Ketuk untuk Mengambil Foto Rumah",
                             style: TextStyle(
-                              color: Color(0xFF94A3B8),
+                              color: isDark ? const Color(0xFF94A3B8) : Colors.grey[600],
                               fontSize: 14,
                             ),
                           ),
@@ -534,21 +429,13 @@ class _FormWargaPageState extends State<FormWargaPage> {
               ),
             const SizedBox(height: 24),
 
-            _buildSectionTitle("4. STATUS BANTUAN SOSIAL"),
+            _buildSectionTitle("4. STATUS BANTUAN SOSIAL", isDark),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _apakahMenerimaBantuan,
-              decoration: const InputDecoration(
-                labelText: "Apakah Keluarga Ini Menerima Bantuan?",
-              ),
-              items: ['Ya', 'Tidak']
-                  .map(
-                    (value) => DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    ),
-                  )
-                  .toList(),
+              decoration: const InputDecoration(labelText: "Apakah Keluarga Ini Menerima Bantuan?"),
+              dropdownColor: theme.colorScheme.surface,
+              items: ['Ya', 'Tidak'].map((value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
               onChanged: (newValue) {
                 setState(() {
                   _apakahMenerimaBantuan = newValue!;
@@ -563,26 +450,24 @@ class _FormWargaPageState extends State<FormWargaPage> {
               ),
               const SizedBox(height: 16),
               Card(
-                color: const Color(0xFF1E293B),
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: Color(0xFF334155)),
+                  side: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.grey[300]!),
                 ),
-                elevation: 0,
+                elevation: isDark ? 0 : 2,
+                shadowColor: Colors.black12,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Status Penerimaan Saat Ini :",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
-                          color: Colors.white,
+                          color: isDark ? Colors.white : Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -590,7 +475,7 @@ class _FormWargaPageState extends State<FormWargaPage> {
                         title: Text(
                           "Belum Menerima / Belum Cair",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
                             fontSize: 14,
                           ),
                         ),
@@ -599,14 +484,13 @@ class _FormWargaPageState extends State<FormWargaPage> {
                         dense: true,
                         contentPadding: EdgeInsets.zero,
                         activeColor: theme.colorScheme.primary,
-                        onChanged: (value) =>
-                            setState(() => _statusPenerimaanSaatIni = value!),
+                        onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
                       ),
                       RadioListTile<String>(
                         title: Text(
                           "Sudah Menerima / Sudah Cair",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
                             fontSize: 14,
                           ),
                         ),
@@ -615,8 +499,7 @@ class _FormWargaPageState extends State<FormWargaPage> {
                         dense: true,
                         contentPadding: EdgeInsets.zero,
                         activeColor: theme.colorScheme.primary,
-                        onChanged: (value) =>
-                            setState(() => _statusPenerimaanSaatIni = value!),
+                        onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
                       ),
                     ],
                   ),
@@ -625,7 +508,7 @@ class _FormWargaPageState extends State<FormWargaPage> {
             ],
             const SizedBox(height: 36),
 
-            // TOMBOL SIMPAN (DENGAN LOADING PROVIDER)
+            // TOMBOL SIMPAN
             Container(
               width: double.infinity,
               height: 52,
@@ -646,41 +529,24 @@ class _FormWargaPageState extends State<FormWargaPage> {
                 boxShadow: wargaProvider.isLoading
                     ? null
                     : [
-                        BoxShadow(
-                          color: const Color(0xFF3B82F6).withOpacity(0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
+                        BoxShadow(color: const Color(0xFF3B82F6).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4)),
                       ],
               ),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: wargaProvider.isLoading
-                      ? null
-                      : () => _simpanDataKeFirebase(),
+                  onTap: wargaProvider.isLoading ? null : () => _simpanDataKeFirebase(),
                   borderRadius: BorderRadius.circular(16),
                   child: Center(
                     child: wargaProvider.isLoading
                         ? const SizedBox(
                             width: 24,
                             height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                           )
                         : Text(
-                            _isEditMode
-                                ? "Simpan Perubahan"
-                                : "Simpan Data Warga",
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                            _isEditMode ? "Simpan Perubahan" : "Simpan Data Warga",
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                   ),
                 ),
@@ -693,23 +559,19 @@ class _FormWargaPageState extends State<FormWargaPage> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, bool isDark) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w800,
-        color: Color(0xFF94A3B8),
+        color: isDark ? const Color(0xFF94A3B8) : Colors.grey[700],
         letterSpacing: 1.1,
       ),
     );
   }
 
-  Widget _buildInputBox({
-    required TextEditingController controller,
-    required String hint,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
+  Widget _buildInputBox({required TextEditingController controller, required String hint, TextInputType keyboardType = TextInputType.text}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextField(

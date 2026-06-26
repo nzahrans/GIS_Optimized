@@ -32,7 +32,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           Navigator.pushReplacementNamed(context, '/admin_dashboard');
         }
       } else {
-        Navigator.pushReplacementNamed(context, '/home');
+        // PERUBAHAN DI SINI: Jika belum login, langsung diarahkan ke peta warga
+        Navigator.pushReplacementNamed(context, '/home'); 
       }
     });
   }
@@ -45,11 +46,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    // 1. Deteksi Mode Tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
+          // 2. Gradien Dinamis
           gradient: LinearGradient(
-            colors: [Color(0xFF090D16), Color(0xFF1E293B)],
+            colors: isDark 
+                ? [const Color(0xFF090D16), const Color(0xFF1E293B)]
+                : [const Color(0xFFE2E8F0), const Color(0xFFF8FAFC)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -73,11 +81,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo Geometris Minimalis Premium
+                    // Logo Geometris Minimalis
                     Stack(
                       alignment: Alignment.center,
                       children: [
-                        // Ring luar berputar lambat dengan dot aksen biru
                         RotationTransition(
                           turns: _rotationController,
                           child: Container(
@@ -86,7 +93,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.08),
+                                color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFF3B82F6).withOpacity(0.2),
                                 width: 1.5,
                               ),
                             ),
@@ -103,36 +110,34 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             ),
                           ),
                         ),
-                        // Lingkaran dalam semi-transparan dengan icon pin minimalis
                         Container(
                           width: 90,
                           height: 90,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [
-                                Colors.white.withOpacity(0.12),
-                                Colors.white.withOpacity(0.03),
-                              ],
+                              colors: isDark 
+                                ? [Colors.white.withOpacity(0.12), Colors.white.withOpacity(0.03)]
+                                : [const Color(0xFF3B82F6).withOpacity(0.2), const Color(0xFF3B82F6).withOpacity(0.05)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.18),
+                              color: isDark ? Colors.white.withOpacity(0.18) : const Color(0xFF3B82F6).withOpacity(0.3),
                               width: 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: isDark ? Colors.black.withOpacity(0.2) : const Color(0xFF3B82F6).withOpacity(0.1),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.location_on_rounded,
                             size: 40,
-                            color: Colors.white,
+                            color: isDark ? Colors.white : const Color(0xFF3B82F6),
                           ),
                         ),
                       ],
@@ -142,12 +147,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           "SIG",
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: textColor,
                             letterSpacing: 0.8,
                           ),
                         ),
@@ -156,42 +161,39 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w300,
-                            color: Colors.white.withOpacity(0.9),
+                            color: textColor.withOpacity(0.9),
                             letterSpacing: 0.8,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    // Kepanjangan Aplikasi (Sangat bagus untuk UI skripsi)
                     Text(
                       "Sistem Informasi Geografis Bantuan Penduduk",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 12,
+                        color: textColor.withOpacity(0.8),
                         letterSpacing: 0.5,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    // Lokasi Spesifik (Rata tengah, 2 baris)
+                    const SizedBox(height: 18),
                     Text(
-                      "Tegalsari RT 02 / RW 02",
+                      "Tegalsari\nRT 02 / RW 02",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 14,
+                        color: textColor.withOpacity(0.5),
                         letterSpacing: 1.5,
                         fontWeight: FontWeight.w500,
-                        height: 1.5, 
+                        height: 1.5,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            // Indikator linear tipis di bagian bawah
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
@@ -205,7 +207,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         borderRadius: BorderRadius.circular(2),
                         child: const LinearProgressIndicator(
                           minHeight: 2.0,
-                          backgroundColor: Colors.white10,
+                          backgroundColor: Colors.black12,
                           valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
                         ),
                       ),
@@ -214,7 +216,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     Text(
                       "Designed by Naufal Zahran",
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
+                        color: textColor.withOpacity(0.4),
                         fontSize: 11,
                         letterSpacing: 0.8,
                       ),

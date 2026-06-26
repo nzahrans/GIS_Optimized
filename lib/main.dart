@@ -6,12 +6,16 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/warga_provider.dart';
 import 'providers/map_provider.dart';
+import 'providers/theme_provider.dart';
 
 // Import views
 import 'views/splash_screen.dart';
 import 'views/user_home.dart';
 import 'views/login_page.dart';
 import 'views/admin_home.dart';
+
+// Import utils
+import 'utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,51 +33,28 @@ class SIGBansosApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => WargaProvider()),
         ChangeNotifierProvider(create: (_) => MapProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()), // Provider Tema
       ],
-      child: MaterialApp(
-        title: 'GIS Bansos Tegalsari',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF090D16),
-          cardColor: const Color(0xFF1E293B),
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFF3B82F6),
-            secondary: Color(0xFFF59E0B),
-            background: Color(0xFF090D16),
-            surface: Color(0xFF1E293B),
-          ),
-          useMaterial3: true,
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFF1E293B),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF334155), width: 1),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1E293B), width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.8),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            labelStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-            floatingLabelStyle: const TextStyle(color: Color(0xFF3B82F6), fontWeight: FontWeight.w600),
-          ),
-        ),
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const SplashScreen(),
-          '/home': (context) => const UserHomePage(),
-          '/login': (context) => const LoginPage(),
-          '/admin_dashboard': (context) => const AdminHomePage(),
+      // Gunakan Consumer agar MaterialApp bisa "mendengarkan" perubahan dari ThemeProvider
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'SIGAP Tegalsari',
+            debugShowCheckedModeBanner: false,
+            
+            // --- KONFIGURASI TEMA DINAMIS ---
+            themeMode: themeProvider.themeMode, // Mengikuti settingan (terang/gelap/sistem)
+            theme: AppTheme.lightTheme,         // Konfigurasi dari app_theme.dart
+            darkTheme: AppTheme.darkTheme,      // Konfigurasi dari app_theme.dart
+            
+            initialRoute: '/',
+            routes: {
+              '/': (context) => const SplashScreen(),
+              '/home': (context) => const UserHomePage(),
+              '/login': (context) => const LoginPage(),
+              '/admin_dashboard': (context) => const AdminHomePage(),
+            },
+          );
         },
       ),
     );

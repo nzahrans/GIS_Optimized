@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../constants/map_style.dart';
+import 'package:provider/provider.dart';
+import '../providers/map_provider.dart';
+
 
 class PickMapPage extends StatefulWidget {
   final LatLng? initialCenter; // Lokasi awal jika ada
@@ -25,6 +27,9 @@ class _PickMapPageState extends State<PickMapPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Deteksi Tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Pilih Lokasi Rumah"),
@@ -46,7 +51,7 @@ class _PickMapPageState extends State<PickMapPage> {
               zoom: 19.0, // Zoom sangat dekat
             ),
             onMapCreated: (controller) {
-              controller.setMapStyle(MapStyle.darkStyle);
+                  context.read<MapProvider>().setController(controller);
             },
             onCameraMove: (position) {
               // Update koordinat setiap peta digeser
@@ -72,17 +77,36 @@ class _PickMapPageState extends State<PickMapPage> {
             child: Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.5),
-                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                border: Border.all(
+                  color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.26 : 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
               ),
               child: Column(
                 children: [
-                  const Text("Koordinat Terpilih:", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(
+                    "Koordinat Terpilih:",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey : Colors.grey[600],
+                    ),
+                  ),
                   Text(
                     "${_currentCenter.latitude.toStringAsFixed(6)}, ${_currentCenter.longitude.toStringAsFixed(6)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                   ),
                   const SizedBox(height: 5),
                   SizedBox(
@@ -92,7 +116,7 @@ class _PickMapPageState extends State<PickMapPage> {
                       onPressed: () {
                         Navigator.pop(context, _currentCenter);
                       },
-                      child: const Text("Pilih Lokasi Ini", style: TextStyle(color: Colors.white)),
+                      child: const Text("Pilih Lokasi Ini", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                   )
                 ],

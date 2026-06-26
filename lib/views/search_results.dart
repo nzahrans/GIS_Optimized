@@ -36,11 +36,16 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white.withOpacity(0.6) : Colors.grey[600];
+
     return Scaffold(
-      backgroundColor: const Color(0xFF090D16),
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF090D16),
-        foregroundColor: Colors.white,
+        backgroundColor: bgColor,
+        foregroundColor: textColor,
         elevation: 0,
         titleSpacing: 0,
         title: Padding(
@@ -49,14 +54,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             height: 40,
             child: TextField(
               controller: _searchController,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: textColor),
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
                 hintText: "Cari warga...",
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+                hintStyle: TextStyle(color: subTextColor, fontSize: 13),
                 filled: true,
-                fillColor: const Color(0xFF1E293B),
-                prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.6), size: 18),
+                fillColor: isDark ? const Color(0xFF1E293B) : Colors.grey[200],
+                prefixIcon: Icon(Icons.search, color: subTextColor, size: 18),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? GestureDetector(
                         onTap: () {
@@ -65,7 +70,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                             _currentQuery = "";
                           });
                         },
-                        child: Icon(Icons.clear, color: Colors.white.withOpacity(0.6), size: 18),
+                        child: Icon(Icons.clear, color: subTextColor, size: 18),
                       )
                     : null,
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -101,7 +106,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
-            color: Colors.white.withOpacity(0.08),
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.withOpacity(0.2),
             height: 1.0,
           ),
         ),
@@ -116,14 +121,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
           }
 
           if (snapshot.hasError) {
-            return const Center(
-              child: Text('Terjadi kesalahan saat memuat data'),
+            return Center(
+              child: Text('Terjadi kesalahan saat memuat data', style: TextStyle(color: textColor)),
             );
           }
 
           if (!snapshot.hasData) {
-            return const Center(
-              child: Text('Data tidak tersedia'),
+            return Center(
+              child: Text('Data tidak tersedia', style: TextStyle(color: textColor)),
             );
           }
 
@@ -132,21 +137,12 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
           final filteredDocs = allDocs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
 
-            final nama =
-                (data['nama'] ?? '').toString().toLowerCase();
+            final nama = (data['nama'] ?? '').toString().toLowerCase();
+            final nik = (data['nik'] ?? '').toString().toLowerCase();
+            final blok = (data['blok'] ?? '').toString().toLowerCase();
+            final search = _currentQuery.toLowerCase().trim();
 
-            final nik =
-                (data['nik'] ?? '').toString().toLowerCase();
-
-            final blok =
-                (data['blok'] ?? '').toString().toLowerCase();
-
-            final search =
-                _currentQuery.toLowerCase().trim();
-
-            return nama.contains(search) ||
-                nik.contains(search) ||
-                blok.contains(search);
+            return nama.contains(search) || nik.contains(search) || blok.contains(search);
           }).toList();
 
           if (filteredDocs.isEmpty) {
@@ -158,23 +154,23 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(24),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF1E293B),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.grey[200],
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.search_off_outlined,
                         size: 64,
-                        color: Colors.white30,
+                        color: isDark ? Colors.white30 : Colors.grey[400],
                       ),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       "Data Tidak Ditemukan",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -183,7 +179,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.6),
+                        color: subTextColor,
                         height: 1.5,
                       ),
                     ),
@@ -224,14 +220,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                     Icon(
                       Icons.find_in_page_outlined,
                       size: 20,
-                      color: Colors.white.withOpacity(0.6),
+                      color: subTextColor,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Menampilkan ${filteredDocs.length} data warga yang cocok',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.6),
+                        color: subTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -258,12 +254,15 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.08),
+                            color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.withOpacity(0.2),
                             width: 1,
                           ),
+                          boxShadow: [
+                            if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                          ],
                         ),
                         child: Row(
                           children: [
@@ -273,7 +272,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                               height: 52,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                color: const Color(0xFF090D16),
+                                color: isDark ? const Color(0xFF090D16) : Colors.grey[200],
                                 image: (widget.isAdmin && fotoUrl.isNotEmpty)
                                     ? DecorationImage(
                                         image: NetworkImage(fotoUrl),
@@ -310,10 +309,10 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                                 children: [
                                   Text(
                                     nama,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                      color: Colors.white,
+                                      color: textColor,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -325,15 +324,15 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.05),
+                                            color: isDark ? Colors.white.withOpacity(0.05) : Colors.blue.withOpacity(0.05),
                                             borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: Colors.white.withOpacity(0.08)),
+                                            border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.blue.withOpacity(0.1)),
                                           ),
                                           child: Text(
                                             "Blok $blok",
                                             style: TextStyle(
                                               fontSize: 11,
-                                              color: Colors.white.withOpacity(0.7),
+                                              color: isDark ? Colors.white.withOpacity(0.7) : Colors.blue[800],
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
@@ -363,7 +362,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                             Icon(
                               Icons.arrow_forward_ios,
                               size: 14,
-                              color: Colors.grey[400],
+                              color: isDark ? Colors.grey[600] : Colors.grey[400],
                             ),
                           ],
                         ),
@@ -396,7 +395,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
           Icon(
             isCair ? Icons.check_circle : Icons.pending,
             size: 12,
-            color: isCair ? Colors.green : Colors.amber,
+            color: isCair ? Colors.green : Colors.amber[700],
           ),
           const SizedBox(width: 4),
           Text(
@@ -404,7 +403,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isCair ? Colors.green : Colors.amber,
+              color: isCair ? Colors.green : Colors.amber[700],
             ),
           ),
         ],
@@ -417,10 +416,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final textColor = isDark ? Colors.white : Colors.black87;
+
         final nama = data['nama'] ?? 'Tanpa Nama';
         final nik = data['nik'] ?? '';
         final noKk = data['no_kk'] ?? '';
@@ -443,10 +446,10 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                   // Nama Warga
                   Text(
                     nama,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   ),
                   const Text(
@@ -467,10 +470,10 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                   ),
                   const SizedBox(height: 8),
                   if (widget.isAdmin) ...[
-                    _profileRow("NIK", nik),
-                    _profileRow("No. KK", noKk),
+                    _profileRow("NIK", nik, isDark),
+                    _profileRow("No. KK", noKk, isDark),
                   ],
-                  _profileRow("Blok/Gang", blok),
+                  _profileRow("Blok/Gang", blok, isDark),
                   const SizedBox(height: 20),
 
                   // Data Bansos (Hanya Tampil untuk Admin)
@@ -489,27 +492,28 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: menerimaBantuan == 'Ya'
-                            ? Colors.green.withOpacity(0.1)
-                            : Colors.white.withOpacity(0.05),
+                            ? Colors.green.withOpacity(isDark ? 0.1 : 0.05)
+                            : (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05)),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: menerimaBantuan == 'Ya'
-                              ? Colors.green.withOpacity(0.2)
-                              : Colors.white.withOpacity(0.1),
+                              ? Colors.green.withOpacity(isDark ? 0.2 : 0.1)
+                              : (isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2)),
                         ),
                       ),
                       child: Column(
                         children: [
-                          _profileRow("Penerima Bantuan", menerimaBantuan),
+                          _profileRow("Penerima Bantuan", menerimaBantuan, isDark),
                           if (menerimaBantuan == 'Ya') ...[
                             const Divider(height: 16),
-                            _profileRow("Jenis Bantuan", jenisBantuan),
-                            _profileRow("Status Pencairan", statusCair),
+                            _profileRow("Jenis Bantuan", jenisBantuan, isDark),
+                            _profileRow("Status Pencairan", statusCair, isDark),
                             if (statusCair == 'Sudah Menerima' &&
                                 data['tanggal_diterima'] != null)
                               _profileRow(
                                 "Waktu Diterima",
                                 DateFormatter.formatIndonesianDate(data['tanggal_diterima']),
+                                isDark,
                               ),
                           ],
                         ],
@@ -527,7 +531,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          color: Colors.grey[200],
+                          color: isDark ? const Color(0xFF1E293B) : Colors.grey[200],
                           image: DecorationImage(
                             image: NetworkImage(fotoUrl),
                             fit: BoxFit.cover,
@@ -547,16 +551,16 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                         height: 120,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE2E8F0)),
                         ),
-                        child: const Column(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.image_not_supported_outlined, size: 36, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text("Foto rumah tidak tersedia", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                            Icon(Icons.image_not_supported_outlined, size: 36, color: isDark ? Colors.white30 : Colors.grey),
+                            const SizedBox(height: 8),
+                            Text("Foto rumah tidak tersedia", style: TextStyle(color: isDark ? Colors.white54 : Colors.grey, fontSize: 13)),
                           ],
                         ),
                       ),
@@ -616,8 +620,8 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       Expanded(
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                            foregroundColor: textColor,
+                            side: BorderSide(color: isDark ? Colors.white.withOpacity(0.2) : Colors.grey.withOpacity(0.4)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -641,7 +645,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     );
   }
 
-  Widget _profileRow(String label, dynamic value) {
+  Widget _profileRow(String label, dynamic value, bool isDark) {
     if (value == null || value.toString().trim().isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -657,7 +661,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             child: Text(
               value?.toString() ?? '-',
               textAlign: TextAlign.end,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isDark ? Colors.white : Colors.black87),
             ),
           ),
         ],

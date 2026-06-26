@@ -24,6 +24,9 @@ class WargaInfoSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
@@ -39,7 +42,7 @@ class WargaInfoSheet extends StatelessWidget {
                   Expanded(
                     child: Text(
                       data['nama'] ?? 'Tanpa Nama',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor),
                     ),
                   ),
                   if (isAdmin && onDeletePressed != null)
@@ -54,32 +57,33 @@ class WargaInfoSheet extends StatelessWidget {
 
               // NIK & No KK (Admin Only)
               if (isAdmin) ...[
-                _infoRow("NIK", data['nik']),
-                _infoRow("No. KK", data['no_kk']),
+                _infoRow("NIK", data['nik'], isDark),
+                _infoRow("No. KK", data['no_kk'], isDark),
               ],
-              _infoRow("Blok/Gang", data['blok']),
+              _infoRow("Blok/Gang", data['blok'], isDark),
               
               if (isAdmin) ...[
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.05),
+                    color: theme.colorScheme.primary.withOpacity(isDark ? 0.1 : 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: theme.colorScheme.primary.withOpacity(0.1)),
                   ),
                   child: Column(
                     children: [
-                      _infoRow("Terima Bantuan?", data['menerima_bantuan']),
+                      _infoRow("Terima Bantuan?", data['menerima_bantuan'], isDark),
                       if (data['menerima_bantuan'] == 'Ya') ...[
                         const Divider(height: 16),
-                        _infoRow("Jenis Bantuan", data['jenis_bantuan']),
-                        _infoRow("Status Cair", data['status_cair']),
+                        _infoRow("Jenis Bantuan", data['jenis_bantuan'], isDark),
+                        _infoRow("Status Cair", data['status_cair'], isDark),
                         if (data['status_cair'] == 'Sudah Menerima' &&
                             data['tanggal_diterima'] != null)
                           _infoRow(
                             "Waktu Diterima",
                             DateFormatter.formatIndonesianDate(data['tanggal_diterima']),
+                            isDark,
                           ),
                       ]
                     ],
@@ -96,7 +100,7 @@ class WargaInfoSheet extends StatelessWidget {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    color: const Color(0xFF090D16),
+                    color: isDark ? const Color(0xFF1E293B) : Colors.grey[200],
                     image: DecorationImage(
                       image: NetworkImage(data['foto_url']),
                       fit: BoxFit.cover,
@@ -109,21 +113,20 @@ class WargaInfoSheet extends StatelessWidget {
                   height: 120,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF090D16),
+                    color: isDark ? const Color(0xFF1E293B) : Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.08)),
+                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.image_not_supported_outlined, size: 36, color: Colors.white.withOpacity(0.3)),
+                      Icon(Icons.image_not_supported_outlined, size: 36, color: isDark ? Colors.white.withOpacity(0.3) : Colors.grey[400]),
                       const SizedBox(height: 8),
-                      Text("Foto rumah tidak tersedia", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+                      Text("Foto rumah tidak tersedia", style: TextStyle(color: isDark ? Colors.white.withOpacity(0.5) : Colors.grey[500], fontSize: 13)),
                     ],
                   ),
                 ),
-
 
               // --- TOMBOL-TOMBOL NAVIGASI / EDIT ---
               if (isAdmin && onEditPressed != null) ...[
@@ -185,14 +188,14 @@ class WargaInfoSheet extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(String label, dynamic value) {
+  Widget _infoRow(String label, dynamic value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-          Text(value?.toString() ?? '-', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+          Text(value?.toString() ?? '-', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
         ],
       ),
     );

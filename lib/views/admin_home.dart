@@ -11,6 +11,7 @@ import 'user_home.dart';
 import '../providers/auth_provider.dart';
 import '../providers/map_provider.dart';
 import '../providers/warga_provider.dart';
+import '../providers/theme_provider.dart'; // Import ThemeProvider
 import '../widgets/warga_info_sheet.dart';
 
 class AdminHomePage extends StatefulWidget {
@@ -100,6 +101,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     BuildContext context,
     List<DocumentSnapshot> docs,
     bool isAdminPage,
+    bool isDark,
   ) {
     final query = _searchQuery.toLowerCase().trim();
     final suggestions = docs.where((doc) {
@@ -130,12 +132,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
       padding: EdgeInsets.zero,
       itemCount: displayList.length + (suggestions.length > 5 ? 1 : 0),
       separatorBuilder: (context, index) =>
-          Divider(height: 1, color: Colors.white.withOpacity(0.08)),
+          Divider(height: 1, color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.withOpacity(0.2)),
       itemBuilder: (context, index) {
         if (index == displayList.length) {
           return ListTile(
             dense: true,
-            tileColor: const Color(0xFF0F172A),
+            tileColor: isDark ? const Color(0xFF0F172A) : Colors.blue.withOpacity(0.05),
             title: Text(
               "Lihat semua hasil untuk '$_searchQuery'...",
               style: const TextStyle(
@@ -186,10 +188,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
           ),
           title: Text(
             nama,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isDark ? Colors.white : Colors.black87),
           ),
           subtitle: blok.toString().isNotEmpty
-              ? Text("Blok $blok", style: const TextStyle(fontSize: 11))
+              ? Text("Blok $blok", style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54))
               : null,
           onTap: () {
             _searchController.clear();
@@ -238,7 +240,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     }
   }
 
-  // --- FUNGSI BUKA GOOGLE MAPS EKSTERNAL ---
   Future<void> _openExternalMap(double lat, double lng) async {
     final Uri googleMapsUrl = Uri.parse(
       "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving",
@@ -252,8 +253,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     }
   }
 
-  // --- WIDGET DASHBOARD RINGKAS ---
-  Widget _buildDashboardCards() {
+  Widget _buildDashboardCards(bool isDark) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('warga').snapshots(),
       builder: (context, snapshot) {
@@ -297,18 +297,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.85),
+                  color: isDark ? const Color(0xFF1E293B).withOpacity(0.85) : Colors.white.withOpacity(0.95),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.12),
+                    color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
                     width: 1.5,
                   ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
+                  boxShadow: [
+                    if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
                   ],
                 ),
                 padding: const EdgeInsets.symmetric(
@@ -322,16 +318,16 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       _isDashboardExpanded
                           ? Icons.arrow_drop_down
                           : Icons.arrow_right,
-                      color: Colors.white70,
+                      color: isDark ? Colors.white70 : Colors.black87,
                       size: 24,
                     ),
                     const SizedBox(width: 4),
-                    const Text(
+                    Text(
                       "Ringkasan Data",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
                     if (_activeFilter != null) ...[
@@ -408,18 +404,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       margin: const EdgeInsets.only(top: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B).withOpacity(0.85),
+                        color: isDark ? const Color(0xFF1E293B).withOpacity(0.85) : Colors.white.withOpacity(0.95),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.12),
+                          color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
                           width: 1.5,
                         ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 6,
-                            offset: Offset(0, 3),
-                          ),
+                        boxShadow: [
+                          if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6, offset: const Offset(0, 3)),
                         ],
                       ),
                       child: Column(
@@ -433,6 +425,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   totalWarga.toString(),
                                   const Color(0xFF60A5FA),
                                   isActive: _activeFilter == 'total',
+                                  isDark: isDark,
                                   onTap: () => _toggleFilter('total'),
                                 ),
                               ),
@@ -444,6 +437,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   penerimaBansos.toString(),
                                   const Color(0xFFFB923C),
                                   isActive: _activeFilter == 'penerima',
+                                  isDark: isDark,
                                   onTap: () => _toggleFilter('penerima'),
                                 ),
                               ),
@@ -459,6 +453,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   sudahCair.toString(),
                                   const Color(0xFF4ADE80),
                                   isActive: _activeFilter == 'sudah_cair',
+                                  isDark: isDark,
                                   onTap: () => _toggleFilter('sudah_cair'),
                                 ),
                               ),
@@ -470,6 +465,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   belumCair.toString(),
                                   const Color(0xFFF87171),
                                   isActive: _activeFilter == 'belum_cair',
+                                  isDark: isDark,
                                   onTap: () => _toggleFilter('belum_cair'),
                                 ),
                               ),
@@ -483,6 +479,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             const Color(0xFFC084FC),
                             isHorizontal: true,
                             isActive: _activeFilter == 'terpetakan',
+                            isDark: isDark,
                             onTap: () => _toggleFilter('terpetakan'),
                           ),
                         ],
@@ -503,6 +500,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     Color color, {
     bool isHorizontal = false,
     bool isActive = false,
+    required bool isDark,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
@@ -540,8 +538,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: isActive
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.7),
+                          ? (isDark ? Colors.white : Colors.black87)
+                          : (isDark ? Colors.white.withOpacity(0.7) : Colors.black54),
                     ),
                   ),
                   const Spacer(),
@@ -576,8 +574,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: isActive
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.7),
+                          ? (isDark ? Colors.white : Colors.black87)
+                          : (isDark ? Colors.white.withOpacity(0.7) : Colors.black54),
                     ),
                   ),
                 ],
@@ -588,8 +586,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Definisi variabel isDark di sini
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final mapProvider = context.watch<MapProvider>();
     final authProvider = context.watch<AuthProvider>();
+    
+    // Gunakan ID dari Dashboard Cloud Anda
+    final String activeMapId = '3a650f80a137987b730a3339';
 
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
@@ -617,8 +620,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         (data['menerima_bantuan'] == 'Ya' &&
                         data['status_cair'] != 'Sudah Menerima');
                   } else if (_activeFilter == 'terpetakan') {
-                    matches =
-                        true; // Karena sudah difilter data['lokasi'] != null
+                    matches = true; 
                   }
                   if (!matches) continue;
                 }
@@ -632,7 +634,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   );
                 }
 
-                // Logika pewarnaan marker tematik sesuai proposal
                 BitmapDescriptor? markerIcon;
                 if (isSelected) {
                   markerIcon = _purpleDotIcon;
@@ -646,7 +647,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   markerIcon = _blueDotIcon;
                 }
 
-                // Fallback jika asinkron belum selesai memuat
                 if (markerIcon == null) {
                   double markerHue = BitmapDescriptor.hueBlue;
                   if (isSelected) {
@@ -679,7 +679,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               Circle(
                 circleId: const CircleId('selected_home_highlight'),
                 center: selectedLatLng,
-                radius: 20.0, // 20 meter radius
+                radius: 20.0,
                 fillColor: const Color(0xFF1E3A8A).withOpacity(0.18),
                 strokeColor: const Color(0xFF1E3A8A),
                 strokeWidth: 2,
@@ -690,6 +690,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
           return Stack(
             children: [
               GoogleMap(
+                key: ValueKey("map_${isDark}"),
+                mapId: activeMapId,
                 mapType: mapProvider.currentMapType,
                 initialCameraPosition: CameraPosition(
                   target:
@@ -702,8 +704,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 },
                 onTap: (point) {
                   FocusScope.of(context).unfocus();
-                  if (_selectedDocId != null)
+                  if (_selectedDocId != null) {
                     setState(() => _selectedDocId = null);
+                  }
                 },
                 markers: markers,
                 circles: circles,
@@ -739,37 +742,36 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                     ),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: const Color(
-                                          0xFF1E293B,
-                                        ).withOpacity(0.85),
+                                        color: isDark ? const Color(0xFF1E293B).withOpacity(0.85) : Colors.white.withOpacity(0.95),
                                         borderRadius: BorderRadius.circular(30),
                                         border: Border.all(
-                                          color: Colors.white.withOpacity(0.12),
+                                          color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
                                           width: 1.5,
                                         ),
+                                        boxShadow: [
+                                          if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))
+                                        ]
                                       ),
                                       child: TextField(
                                         controller: _searchController,
                                         focusNode: _searchFocusNode,
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white : Colors.black87,
                                         ),
                                         decoration: InputDecoration(
                                           hintText: "Cari Data Warga",
                                           hintStyle: TextStyle(
-                                            color: Colors.white.withOpacity(
-                                              0.5,
-                                            ),
+                                            color: isDark ? Colors.white.withOpacity(0.5) : Colors.grey,
                                           ),
                                           filled: false,
-                                          prefixIcon: const Padding(
-                                            padding: EdgeInsets.only(
+                                          prefixIcon: Padding(
+                                            padding: const EdgeInsets.only(
                                               left: 15,
                                               right: 10,
                                             ),
                                             child: Icon(
                                               Icons.search,
-                                              color: Colors.white70,
+                                              color: isDark ? Colors.white70 : Colors.grey[700],
                                             ),
                                           ),
                                           suffixIcon: _searchQuery.isNotEmpty
@@ -780,9 +782,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                                       _searchQuery = "";
                                                     });
                                                   },
-                                                  child: const Icon(
+                                                  child: Icon(
                                                     Icons.clear,
-                                                    color: Colors.white70,
+                                                    color: isDark ? Colors.white70 : Colors.grey[700],
                                                   ),
                                                 )
                                               : null,
@@ -846,7 +848,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   ),
                                 ),
 
-                                // Suggestions Overlay
                                 if (_searchQuery.isNotEmpty) ...[
                                   const SizedBox(height: 8),
                                   ClipRRect(
@@ -858,30 +859,20 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                       ),
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          color: const Color(
-                                            0xFF1E293B,
-                                          ).withOpacity(0.95),
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.white.withOpacity(
-                                              0.12,
-                                            ),
-                                            width: 1.5,
-                                          ),
+                                          color: isDark ? const Color(0xFF1E293B).withOpacity(0.95) : Colors.white.withOpacity(0.98),
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3), width: 1.5),
                                         ),
                                         constraints: const BoxConstraints(
                                           maxHeight: 250,
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
+                                          borderRadius: BorderRadius.circular(16),
                                           child: _buildSuggestionsList(
                                             context,
                                             allWargaDocs,
                                             true,
+                                            isDark,
                                           ),
                                         ),
                                       ),
@@ -893,7 +884,30 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           ),
 
                           const SizedBox(width: 10),
+                      // --- TOMBOL GANTI TEMA ---
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Material(
+                          elevation: 5,
+                          shape: const CircleBorder(),
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          child: CircleAvatar(
+                            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            child: IconButton(
+                              icon: Icon(
+                                isDark ? Icons.light_mode : Icons.dark_mode,
+                                color: isDark ? Colors.amber : Colors.blue[800],
+                              ),
+                              tooltip: "Ganti Tema",
+                              onPressed: () => context.read<ThemeProvider>().toggleTheme(!isDark),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(width: 8), // Jarak ke tombol Profil/Logout
 
+                      // --- TOMBOL LOGOUT ---
                           Padding(
                             padding: const EdgeInsets.only(top: 4.0),
                             child: Material(
@@ -903,48 +917,42 @@ class _AdminHomePageState extends State<AdminHomePage> {
                               child: CircleAvatar(
                                 backgroundColor: Colors.red,
                                 child: IconButton(
-                                    icon: const Icon(
-                                      Icons.logout,
-                                      color: Colors.white,
-                                    ),
-                                    tooltip: "Logout Admin",
-                                    onPressed: () async {
-                                      // 1. Panggil fungsi sign out
-                                      await authProvider.signOut();
-
-                                      if (mounted) {
-                                        // 2. Tampilkan pesan berhasil logout
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text("Berhasil keluar dari akun Admin")),
-                                        );
-
-                                        // 3. Hapus semua riwayat rute dan pindah ke UserHomePage
-                                        Navigator.pushAndRemoveUntil(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => const UserHomePage(),
-                                          ),
-                                          (route) => false, // false membersihkan semua tumpukan halaman
-                                        );
-                                      }
-                                    },
+                                  icon: const Icon(
+                                    Icons.logout,
+                                    color: Colors.white,
                                   ),
+                                  tooltip: "Logout Admin",
+                                  onPressed: () async {
+                                    await authProvider.signOut();
+
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text("Berhasil keluar dari akun Admin")),
+                                      );
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const UserHomePage(),
+                                        ),
+                                        (route) => false,
+                                      );
+                                    }
+                                  },
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      if (_searchQuery.isEmpty) _buildDashboardCards(),
+                      if (_searchQuery.isEmpty) _buildDashboardCards(isDark),
                     ],
                   ),
                 ),
               ),
 
-              // Tombol Hapus Rute
               if (mapProvider.polylines.isNotEmpty)
                 Positioned(
-                  bottom:
-                      90, // Lebih tinggi agar tidak menumpuk dengan FAB Tambah Data
+                  bottom: 90, 
                   right: 15,
                   child: FloatingActionButton.extended(
                     onPressed: () => mapProvider.clearRoute(),
@@ -957,12 +965,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                 ),
 
-              // Indikator Loading Rute
               if (mapProvider.isLoadingRoute)
-                const Center(
+                Center(
                   child: Card(
+                    color: Theme.of(context).colorScheme.surface,
                     elevation: 4,
-                    child: Padding(
+                    child: const Padding(
                       padding: EdgeInsets.all(20.0),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -976,7 +984,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                 ),
 
-              // Tombol Ganti Tipe Peta (Map Type Switcher)
               Positioned(
                 bottom: mapProvider.polylines.isNotEmpty ? 150 : 90,
                 right: 15,
@@ -984,8 +991,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   heroTag: "btnMapTypeAdmin",
                   mini: true,
                   onPressed: () => mapProvider.toggleMapType(),
-                  backgroundColor: const Color(0xFF1E293B),
-                  foregroundColor: Colors.white,
+                  backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  foregroundColor: isDark ? Colors.white : Colors.black87,
                   tooltip: "Ganti Tipe Peta",
                   child: const Icon(Icons.layers_outlined),
                 ),
@@ -1021,6 +1028,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1030,7 +1038,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           data: data,
           isAdmin: true,
           onRoutePressed: () async {
-            Navigator.pop(context); // Tutup bottom sheet
+            Navigator.pop(context); 
             if (data['lokasi'] != null) {
               GeoPoint geo = data['lokasi'];
               final mapProv = context.read<MapProvider>();
@@ -1054,7 +1062,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             }
           },
           onEditPressed: () {
-            Navigator.pop(context); // Tutup bottom sheet
+            Navigator.pop(context); 
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -1079,6 +1087,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: const Text("Hapus Data?"),
         content: Text("Yakin ingin menghapus data '$nama' secara permanen?"),
         actions: [
@@ -1089,8 +1098,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              Navigator.pop(dialogCtx); // Tutup dialog konfirmasi
-              Navigator.pop(context); // Tutup bottom sheet info
+              Navigator.pop(dialogCtx); 
+              Navigator.pop(context); 
 
               final wargaProvider = context.read<WargaProvider>();
               final success = await wargaProvider.deleteWarga(docId);

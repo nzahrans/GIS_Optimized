@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart'; // Tambahkan import ThemeProvider
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -61,20 +62,42 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    
+    // 1. Deteksi apakah mode saat ini adalah mode gelap
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // 2. Siapkan warna teks dinamis mengikuti tema
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final textSubtitleColor = isDark ? Colors.white.withOpacity(0.6) : const Color(0xFF64748B);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: textColor),
+        actions: [
+          // TOMBOL TOGGLE TEMA
+          IconButton(
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+            tooltip: 'Ganti Tema',
+            onPressed: () {
+              // Panggil fungsi toggle dari ThemeProvider
+              context.read<ThemeProvider>().toggleTheme(!isDark);
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
+          // 3. Gradient dinamis: Gelap atau Terang
           gradient: LinearGradient(
-            colors: [Color(0xFF090D16), Color(0xFF1E293B)],
+            colors: isDark 
+                ? [const Color(0xFF090D16), const Color(0xFF1E293B)]
+                : [const Color(0xFFE2E8F0), const Color(0xFFF8FAFC)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -89,10 +112,15 @@ class _LoginPageState extends State<LoginPage> {
                   filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.06),
+                      // 4. Latar belakang kontainer kaca (glassmorphism) dinamis
+                      color: isDark 
+                          ? Colors.white.withOpacity(0.06) 
+                          : Colors.white.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.12),
+                        color: isDark 
+                            ? Colors.white.withOpacity(0.12)
+                            : Colors.white,
                         width: 1.5,
                       ),
                     ),
@@ -100,42 +128,42 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Logo Geometris Minimalis Premium (konsisten dengan splash screen)
+                        // Logo Geometris Minimalis
                         Container(
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [
-                                Colors.white.withOpacity(0.12),
-                                Colors.white.withOpacity(0.03),
-                              ],
+                              colors: isDark
+                                  ? [Colors.white.withOpacity(0.12), Colors.white.withOpacity(0.03)]
+                                  : [const Color(0xFF3B82F6).withOpacity(0.2), const Color(0xFF3B82F6).withOpacity(0.05)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.18),
+                              color: isDark ? Colors.white.withOpacity(0.18) : const Color(0xFF3B82F6).withOpacity(0.3),
                               width: 1.5,
                             ),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.location_on_rounded,
                             size: 36,
-                            color: Colors.white,
+                            color: isDark ? Colors.white : const Color(0xFF3B82F6),
                           ),
                         ),
-                        const SizedBox(height: 15),
+                        const SizedBox(height: 20),
+                        
                         // Nama Aplikasi Dual-tone
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               "SIG",
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w900,
-                                color: Colors.white,
+                                color: textColor,
                                 letterSpacing: 0.8,
                               ),
                             ),
@@ -144,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w300,
-                                color: Colors.white.withOpacity(0.9),
+                                color: textColor.withOpacity(0.9),
                                 letterSpacing: 0.8,
                               ),
                             ),
@@ -153,40 +181,45 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 4),
                         // Kepanjangan Aplikasi
                         Text(
-                          "Sistem Informasi Geografis \nBantuan Penduduk",
+                          "Sistem Informasi Geografis Bantuan Penduduk",
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 11,
+                            color: textColor.withOpacity(0.8),
                             letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 20),
+                        
+                        // Instruksi spesifik RT/RW
                         Text(
-                          "Tegalsari RT 02 / RW 02",
+                          "Akses Khusus Warga & Pengurus RT 02 / RW 02\nTegalsari, Sumedang",
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.white.withOpacity(0.5),
-                            letterSpacing: 1.5,
-                            fontWeight: FontWeight.w500,
-                            height: 1.5, 
+                            fontSize: 13,
+                            color: textSubtitleColor,
+                            letterSpacing: 0.5,
+                            height: 1.4,
                           ),
                         ),
-                        const SizedBox(height: 15),
+                        const SizedBox(height: 32),
+                        
+                        // Form Email/NIK
                         TextField(
                           controller: _emailController,
                           keyboardType: TextInputType.text,
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: textColor),
                           decoration: InputDecoration(
                             labelText: "Email atau NIK",
-                            labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                            prefixIcon: Icon(Icons.person_outline, color: Colors.white.withOpacity(0.6)),
+                            labelStyle: TextStyle(color: textSubtitleColor),
+                            prefixIcon: Icon(Icons.person_outline, color: textSubtitleColor),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.05),
+                            fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                              borderSide: BorderSide(
+                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.transparent,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -196,26 +229,30 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        
+                        // Form Password
                         TextField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: textColor),
                           decoration: InputDecoration(
                             labelText: "Password",
-                            labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                            prefixIcon: Icon(Icons.lock_outline, color: Colors.white.withOpacity(0.6)),
+                            labelStyle: TextStyle(color: textSubtitleColor),
+                            prefixIcon: Icon(Icons.lock_outline, color: textSubtitleColor),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                color: Colors.white.withOpacity(0.6),
+                                color: textSubtitleColor,
                               ),
                               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                             ),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.05),
+                            fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                              borderSide: BorderSide(
+                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.transparent,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -226,6 +263,8 @@ class _LoginPageState extends State<LoginPage> {
                           onSubmitted: (_) => _login(),
                         ),
                         const SizedBox(height: 32),
+                        
+                        // Tombol Masuk
                         Container(
                           width: double.infinity,
                           height: 52,
@@ -273,7 +312,7 @@ class _LoginPageState extends State<LoginPage> {
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
-                                          color: Colors.white,
+                                          color: Colors.white, // Teks tombol tetap putih di kedua mode
                                           letterSpacing: 0.5,
                                         ),
                                       ),
