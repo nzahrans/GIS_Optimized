@@ -108,7 +108,16 @@ class WargaProvider extends ChangeNotifier {
       final data = warga.copyWith(fotoUrl: fotoUrl).toMap();
       data['tanggal_input'] = FieldValue.serverTimestamp();
 
-      await FirestoreService.addWarga(data);
+      final String docId = await FirestoreService.addWarga(data);
+
+      // Jika statusnya langsung "Sudah Menerima", catat ke riwayat_bansos subcollection
+      if (warga.statusBansos == 'Sudah Menerima') {
+        await FirestoreService.addRiwayatBansos(docId, {
+          'jenis_bantuan': warga.jenisBantuan,
+          'status_cair': warga.statusBansos,
+          'tanggal_diterima': FieldValue.serverTimestamp(),
+        });
+      }
       
       _isLoading = false;
       notifyListeners();
@@ -122,7 +131,12 @@ class WargaProvider extends ChangeNotifier {
   }
 
   /// Update data warga
-  Future<bool> updateWarga(String docId, Warga warga, File? fotoFile) async {
+  Future<bool> updateWarga(
+    String docId,
+    Warga warga,
+    File? fotoFile, {
+    bool shouldAddHistory = false,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -166,6 +180,14 @@ class WargaProvider extends ChangeNotifier {
 
       final data = warga.copyWith(fotoUrl: fotoUrl).toMap();
       await FirestoreService.updateWarga(docId, data);
+
+      if (shouldAddHistory) {
+        await FirestoreService.addRiwayatBansos(docId, {
+          'jenis_bantuan': warga.jenisBantuan,
+          'status_cair': warga.statusBansos,
+          'tanggal_diterima': FieldValue.serverTimestamp(),
+        });
+      }
       
       _isLoading = false;
       notifyListeners();

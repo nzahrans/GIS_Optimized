@@ -12,6 +12,7 @@ class Warga {
   final String jenisBantuan;
   final String statusBansos; // "Sudah Menerima" atau "Belum Menerima"
   final String fotoUrl;
+  final DateTime? tanggalDiterima;
 
   Warga({
     required this.id,
@@ -24,6 +25,7 @@ class Warga {
     this.jenisBantuan = '-',
     this.statusBansos = 'Belum Menerima',
     this.fotoUrl = '',
+    this.tanggalDiterima,
   });
 
   /// Buat Warga dari dokumen Firestore.
@@ -41,6 +43,9 @@ class Warga {
       jenisBantuan: data['jenis_bantuan'] ?? '-',
       statusBansos: data['status_cair'] ?? 'Belum Menerima',
       fotoUrl: data['foto_url'] ?? '',
+      tanggalDiterima: data['tanggal_diterima'] != null
+          ? (data['tanggal_diterima'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -56,6 +61,9 @@ class Warga {
       'jenis_bantuan': jenisBantuan,
       'status_cair': statusBansos,
       'foto_url': fotoUrl,
+      'tanggal_diterima': tanggalDiterima != null
+          ? Timestamp.fromDate(tanggalDiterima!)
+          : null,
     };
   }
 
@@ -71,6 +79,7 @@ class Warga {
     String? jenisBantuan,
     String? statusBansos,
     String? fotoUrl,
+    DateTime? tanggalDiterima,
   }) {
     return Warga(
       id: id ?? this.id,
@@ -83,6 +92,7 @@ class Warga {
       jenisBantuan: jenisBantuan ?? this.jenisBantuan,
       statusBansos: statusBansos ?? this.statusBansos,
       fotoUrl: fotoUrl ?? this.fotoUrl,
+      tanggalDiterima: tanggalDiterima ?? this.tanggalDiterima,
     );
   }
 }

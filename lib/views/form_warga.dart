@@ -78,10 +78,11 @@ class _FormWargaPageState extends State<FormWargaPage> {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Aktifkan GPS pada HP Anda!')),
         );
+      }
       return;
     }
 
@@ -89,28 +90,29 @@ class _FormWargaPageState extends State<FormWargaPage> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        if (mounted)
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak')));
+        }
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Izin lokasi ditolak permanen. Buka pengaturan.'),
           ),
         );
+      }
       return;
     }
 
-    if (mounted)
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Sedang mencari titik koordinat...")),
       );
+    }
 
     Position position = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
@@ -121,10 +123,11 @@ class _FormWargaPageState extends State<FormWargaPage> {
       _koordinatController.text = "${position.latitude}, ${position.longitude}";
     });
 
-    if (mounted)
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Lokasi GPS berhasil ditemukan!")),
       );
+    }
   }
 
   // --- FUNGSI AMBIL FOTO ---
@@ -243,6 +246,41 @@ class _FormWargaPageState extends State<FormWargaPage> {
       return;
     }
 
+    final newStatus = _apakahMenerimaBantuan == 'Ya'
+        ? _statusPenerimaanSaatIni
+        : '-';
+
+    DateTime? tanggalDiterima;
+    bool shouldAddHistory = false; // Flag pelacak riwayat subcollection
+
+    if (newStatus == 'Sudah Menerima') {
+      final oldStatus = widget.existingData != null
+          ? (widget.existingData!['status_cair'] ?? 'Belum Menerima')
+          : 'Belum Menerima';
+
+      if (oldStatus == 'Sudah Menerima') {
+        // Jika sebelumnya sudah menerima, pertahankan tanggal yang lama jika ada
+        if (widget.existingData != null &&
+            widget.existingData!['tanggal_diterima'] != null) {
+          final dynamic rawDate = widget.existingData!['tanggal_diterima'];
+          if (rawDate is Timestamp) {
+            tanggalDiterima = rawDate.toDate();
+          } else if (rawDate is DateTime) {
+            tanggalDiterima = rawDate;
+          }
+        }
+        // Jika tidak ada tanggal lama, set sekarang sebagai fallback
+        tanggalDiterima ??= DateTime.now();
+      } else {
+        // Perubahan status dari belum ke sudah, catat tanggal saat ini dan trigger simpan riwayat
+        tanggalDiterima = DateTime.now();
+        shouldAddHistory = true;
+      }
+    } else {
+      // Jika statusnya bukan "Sudah Menerima", maka tidak ada tanggal diterima
+      tanggalDiterima = null;
+    }
+
     // 4. Instansiasi objek Warga
     final warga = Warga(
       id: widget.docId ?? '',
@@ -255,10 +293,9 @@ class _FormWargaPageState extends State<FormWargaPage> {
       jenisBantuan: _apakahMenerimaBantuan == 'Ya'
           ? _jenisBantuanController.text.trim()
           : '-',
-      statusBansos: _apakahMenerimaBantuan == 'Ya'
-          ? _statusPenerimaanSaatIni
-          : '-',
+      statusBansos: newStatus,
       fotoUrl: _existingFotoUrl ?? '',
+      tanggalDiterima: tanggalDiterima,
     );
 
     // 5. Eksekusi tambah atau update data
@@ -268,6 +305,7 @@ class _FormWargaPageState extends State<FormWargaPage> {
         widget.docId!,
         warga,
         _fotoRumah,
+        shouldAddHistory: shouldAddHistory, // Lewatkan parameter riwayat ke provider
       );
     } else {
       success = await wargaProvider.addWarga(warga, _fotoRumah);

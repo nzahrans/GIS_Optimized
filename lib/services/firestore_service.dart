@@ -20,6 +20,15 @@ class FirestoreService {
     await _db.collection(_collection).doc(docId).update(data);
   }
 
+  /// Tambah data riwayat bansos ke subcollection warga.
+  static Future<void> addRiwayatBansos(String wargaDocId, Map<String, dynamic> riwayatData) async {
+    await _db
+        .collection(_collection)
+        .doc(wargaDocId)
+        .collection('riwayat_bansos')
+        .add(riwayatData);
+  }
+
   /// Hapus data warga berdasarkan ID dokumen.
   static Future<void> deleteWarga(String docId) async {
     await _db.collection(_collection).doc(docId).delete();

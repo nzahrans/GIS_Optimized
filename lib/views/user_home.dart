@@ -10,6 +10,7 @@ import 'search_results.dart';
 import '../providers/map_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/warga_info_sheet.dart';
+import '../utils/date_formatter.dart';
 
 class UserHomePage extends StatefulWidget {
   final LatLng? centerOnLocation;
@@ -197,8 +198,7 @@ class _UserHomePageState extends State<UserHomePage> {
 
   // --- FUNGSI BUKA GOOGLE MAPS EKSTERNAL ---
   Future<void> _openExternalMap(double lat, double lng) async {
-    final Uri googleMapsUrl = Uri.parse(
-        "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving");
+    final Uri googleMapsUrl = Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng");
 
     if (!await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication)) {
       if (mounted) {
@@ -558,7 +558,7 @@ class _UserHomePageState extends State<UserHomePage> {
   void _showProfilWarga(BuildContext context, String email) {
     final String nik = email.split('@')[0];
 
-    // Inisialisasi stream di luar builder agar tidak di-recreate saat bottom sheet di-drag/rebuild
+    // Inisialisasi stream di luar builder agar tidak di-recreate
     final Stream<QuerySnapshot> profileStream = FirebaseFirestore.instance
         .collection('warga')
         .where('nik', isEqualTo: nik)
@@ -622,6 +622,7 @@ class _UserHomePageState extends State<UserHomePage> {
               );
             }
 
+            final docId = snapshot.data!.docs.first.id;
             final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
 
             return SafeArea(
@@ -637,7 +638,7 @@ class _UserHomePageState extends State<UserHomePage> {
                         data['nama'] ?? 'Tanpa Nama',
                         style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                       ),
-                      const Text("Akun Resmi Warga Tegalsari", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      const Text("Akun Resmi Warga Tegalsari RT 02 RW 02", style: TextStyle(color: Colors.grey, fontSize: 12)),
                       const Divider(height: 24),
                       const Text(
                         "DATA KEPENDUDUKAN",
@@ -651,7 +652,7 @@ class _UserHomePageState extends State<UserHomePage> {
                       const SizedBox(height: 24),
 
                       const Text(
-                        "STATUS BANTUAN SOSIAL (BANSOS)",
+                        "STATUS BANTUAN SOSIAL SAAT INI",
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey, letterSpacing: 1.1),
                       ),
                       const SizedBox(height: 8),
@@ -686,25 +687,77 @@ class _UserHomePageState extends State<UserHomePage> {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey, letterSpacing: 1.1),
                       ),
                       const SizedBox(height: 8),
+                      
                       if (data['menerima_bantuan'] == 'Ya')
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                            backgroundColor: data['status_cair'] == 'Sudah Menerima'
-                                ? Colors.green[100]
-                                : Colors.amber[100],
-                            child: Icon(
-                              data['status_cair'] == 'Sudah Menerima' ? Icons.check : Icons.access_time,
-                              color: data['status_cair'] == 'Sudah Menerima' ? Colors.green : Colors.amber[800],
-                            ),
-                          ),
-                          title: const Text("Penyaluran Periode Saat Ini", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          subtitle: Text(
-                            data['status_cair'] == 'Sudah Menerima'
-                                ? "Telah disalurkan ke rumah warga"
-                                : "Menunggu pencairan di Kelurahan",
-                            style: const TextStyle(fontSize: 12),
-                          ),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('warga')
+                              .doc(docId)
+                              .collection('riwayat_bansos')
+                              .orderBy('tanggal_diterima', descending: true)
+                              .snapshots(),
+                          builder: (context, riwayatSnapshot) {
+                            if (riwayatSnapshot.connectionState == ConnectionState.waiting) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                              );
+                            }
+
+                            if (!riwayatSnapshot.hasData || riwayatSnapshot.data!.docs.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8.0),
+                                child: Text(
+                                  "Belum ada riwayat penerimaan bansos untuk akun ini.",
+                                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                                ),
+                              );
+                            }
+
+                            return ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: riwayatSnapshot.data!.docs.length,
+                              separatorBuilder: (context, index) => const Divider(height: 16),
+                              itemBuilder: (context, index) {
+                                final riwayatData = riwayatSnapshot.data!.docs[index].data() as Map<String, dynamic>;
+                                final jenisBantuan = riwayatData['jenis_bantuan'] ?? '-';
+                                final rawDate = riwayatData['tanggal_diterima'];
+                                
+                                String tanggalFormat = '-';
+                                if (rawDate != null) {
+                                  if (rawDate is Timestamp) {
+                                    tanggalFormat = DateFormatter.formatIndonesianDate(rawDate.toDate());
+                                  } else if (rawDate is String) {
+                                    tanggalFormat = rawDate;
+                                  }
+                                }
+
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: const CircleAvatar(
+                                    backgroundColor: Color(0xFFDCFCE7),
+                                    child: Icon(Icons.check_circle, color: Colors.green),
+                                  ),
+                                  title: Text(
+                                    "Bantuan $jenisBantuan",
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Text(
+                                      "Diterima pada: $tanggalFormat",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.green[800],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         )
                       else
                         const Padding(
@@ -919,8 +972,8 @@ class _UserHomePageState extends State<UserHomePage> {
                                 debugPrint('[ChangePassword] Sukses memperbarui password.');
                                 if (parentContext.mounted) {
                                   final messenger = ScaffoldMessenger.of(parentContext);
-                                  Navigator.pop(dialogContext); // Tutup dialog Ubah Password
-                                  Navigator.pop(parentContext); // Tutup bottom sheet Profil
+                                  Navigator.pop(dialogContext);
+                                  Navigator.pop(parentContext);
                                   messenger.showSnackBar(
                                     const SnackBar(
                                       content: Text("Password berhasil diperbarui!"),

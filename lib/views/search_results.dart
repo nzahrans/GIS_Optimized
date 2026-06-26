@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'user_home.dart';
 import 'admin_home.dart';
+import '../utils/date_formatter.dart';
 
 class SearchResultsPage extends StatefulWidget {
   final String query;
@@ -504,6 +505,12 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                             const Divider(height: 16),
                             _profileRow("Jenis Bantuan", jenisBantuan),
                             _profileRow("Status Pencairan", statusCair),
+                            if (statusCair == 'Sudah Menerima' &&
+                                data['tanggal_diterima'] != null)
+                              _profileRow(
+                                "Waktu Diterima",
+                                DateFormatter.formatIndonesianDate(data['tanggal_diterima']),
+                              ),
                           ],
                         ],
                       ),

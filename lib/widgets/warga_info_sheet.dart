@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/date_formatter.dart';
 
 class WargaInfoSheet extends StatelessWidget {
   final String docId;
@@ -74,6 +75,12 @@ class WargaInfoSheet extends StatelessWidget {
                         const Divider(height: 16),
                         _infoRow("Jenis Bantuan", data['jenis_bantuan']),
                         _infoRow("Status Cair", data['status_cair']),
+                        if (data['status_cair'] == 'Sudah Menerima' &&
+                            data['tanggal_diterima'] != null)
+                          _infoRow(
+                            "Waktu Diterima",
+                            DateFormatter.formatIndonesianDate(data['tanggal_diterima']),
+                          ),
                       ]
                     ],
                   ),
