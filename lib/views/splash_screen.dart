@@ -152,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           ),
                         ),
                         Text(
-                          "Bansos",
+                          "AP",
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w300,
@@ -162,14 +162,29 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
+                    // Kepanjangan Aplikasi (Sangat bagus untuk UI skripsi)
                     Text(
-                      "Tegalsari • Sumedang",
+                      "Sistem Informasi Geografis Bantuan Penduduk",
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
+                        color: Colors.white.withOpacity(0.8),
+                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Lokasi Spesifik (Rata tengah, 2 baris)
+                    Text(
+                      "Tegalsari RT 02 / RW 02",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 10,
                         color: Colors.white.withOpacity(0.5),
                         letterSpacing: 1.5,
                         fontWeight: FontWeight.w500,
+                        height: 1.5, 
                       ),
                     ),
                   ],

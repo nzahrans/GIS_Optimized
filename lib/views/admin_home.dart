@@ -7,7 +7,7 @@ import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'form_warga.dart';
 import 'search_results.dart';
-import 'login_page.dart';
+import 'user_home.dart';
 import '../providers/auth_provider.dart';
 import '../providers/map_provider.dart';
 import '../providers/warga_provider.dart';
@@ -903,25 +903,32 @@ class _AdminHomePageState extends State<AdminHomePage> {
                               child: CircleAvatar(
                                 backgroundColor: Colors.red,
                                 child: IconButton(
-                                  icon: const Icon(
-                                    Icons.logout,
-                                    color: Colors.white,
-                                  ),
-                                  tooltip: "Logout Admin",
-                                  onPressed: () async {
-                                    await authProvider.signOut();
+                                    icon: const Icon(
+                                      Icons.logout,
+                                      color: Colors.white,
+                                    ),
+                                    tooltip: "Logout Admin",
+                                    onPressed: () async {
+                                      // 1. Panggil fungsi sign out
+                                      await authProvider.signOut();
 
-                                    if (mounted) {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const LoginPage(),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ),
+                                      if (mounted) {
+                                        // 2. Tampilkan pesan berhasil logout
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text("Berhasil keluar dari akun Admin")),
+                                        );
+
+                                        // 3. Hapus semua riwayat rute dan pindah ke UserHomePage
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => const UserHomePage(),
+                                          ),
+                                          (route) => false, // false membersihkan semua tumpukan halaman
+                                        );
+                                      }
+                                    },
+                                  ),
                               ),
                             ),
                           ),

@@ -125,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 15),
                         // Nama Aplikasi Dual-tone
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -140,7 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             Text(
-                              "Bansos",
+                              "AP",
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w300,
@@ -150,17 +150,30 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
+                        // Kepanjangan Aplikasi
                         Text(
-                          "Masuk sebagai Admin RT atau Warga",
+                          "Sistem Informasi Geografis \nBantuan Penduduk",
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.8),
                             letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 5),
+                        Text(
+                          "Tegalsari RT 02 / RW 02",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white.withOpacity(0.5),
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w500,
+                            height: 1.5, 
+                          ),
+                        ),
+                        const SizedBox(height: 15),
                         TextField(
                           controller: _emailController,
                           keyboardType: TextInputType.text,
