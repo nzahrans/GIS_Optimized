@@ -44,7 +44,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.centerOnLocation != null) {
-        context.read<MapProvider>().moveCamera(widget.centerOnLocation!, zoom: 19.0);
+        context.read<MapProvider>().moveCamera(
+          widget.centerOnLocation!,
+          zoom: 19.0,
+        );
       }
     });
   }
@@ -76,8 +79,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
     canvas.drawCircle(Offset(radius + 4, radius + 4), radius, strokePaint);
 
     final int size = (radius * 2 + 8).toInt();
-    final ui.Image image = await pictureRecorder.endRecording().toImage(size, size);
-    final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    final ui.Image image = await pictureRecorder.endRecording().toImage(
+      size,
+      size,
+    );
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
   }
 
@@ -88,7 +96,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
     super.dispose();
   }
 
-  Widget _buildSuggestionsList(BuildContext context, List<DocumentSnapshot> docs, bool isAdminPage) {
+  Widget _buildSuggestionsList(
+    BuildContext context,
+    List<DocumentSnapshot> docs,
+    bool isAdminPage,
+  ) {
     final query = _searchQuery.toLowerCase().trim();
     final suggestions = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
@@ -103,7 +115,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
     if (suggestions.isEmpty) {
       return const ListTile(
         leading: Icon(Icons.search_off, color: Colors.grey),
-        title: Text("Tidak ada hasil cocok", style: TextStyle(color: Colors.grey)),
+        title: Text(
+          "Tidak ada hasil cocok",
+          style: TextStyle(color: Colors.grey),
+        ),
       );
     }
 
@@ -114,7 +129,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.zero,
       itemCount: displayList.length + (suggestions.length > 5 ? 1 : 0),
-      separatorBuilder: (context, index) => Divider(height: 1, color: Colors.white.withOpacity(0.08)),
+      separatorBuilder: (context, index) =>
+          Divider(height: 1, color: Colors.white.withOpacity(0.08)),
       itemBuilder: (context, index) {
         if (index == displayList.length) {
           return ListTile(
@@ -127,7 +143,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 color: Color(0xFF3B82F6),
               ),
             ),
-            trailing: const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF3B82F6)),
+            trailing: const Icon(
+              Icons.arrow_forward,
+              size: 16,
+              color: Color(0xFF3B82F6),
+            ),
             onTap: () {
               final searchVal = _searchQuery;
               _searchController.clear();
@@ -138,10 +158,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SearchResultsPage(
-                    query: searchVal,
-                    isAdmin: isAdminPage,
-                  ),
+                  builder: (context) =>
+                      SearchResultsPage(query: searchVal, isAdmin: isAdminPage),
                 ),
               );
             },
@@ -157,7 +175,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
           dense: true,
           leading: CircleAvatar(
             radius: 14,
-            backgroundColor: isAdminPage ? Colors.red.withOpacity(0.2) : const Color(0xFF3B82F6).withOpacity(0.2),
+            backgroundColor: isAdminPage
+                ? Colors.red.withOpacity(0.2)
+                : const Color(0xFF3B82F6).withOpacity(0.2),
             child: Icon(
               Icons.location_on_outlined,
               size: 16,
@@ -218,16 +238,16 @@ class _AdminHomePageState extends State<AdminHomePage> {
     }
   }
 
-
-
   // --- FUNGSI BUKA GOOGLE MAPS EKSTERNAL ---
   Future<void> _openExternalMap(double lat, double lng) async {
     final Uri googleMapsUrl = Uri.parse(
-        "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving");
+      "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving",
+    );
     if (!await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication)) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Gagal membuka Maps")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Gagal membuka Maps")));
       }
     }
   }
@@ -279,7 +299,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E293B).withOpacity(0.85),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.5),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.12),
+                    width: 1.5,
+                  ),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
@@ -288,12 +311,17 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      _isDashboardExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
+                      _isDashboardExpanded
+                          ? Icons.arrow_drop_down
+                          : Icons.arrow_right,
                       color: Colors.white70,
                       size: 24,
                     ),
@@ -315,11 +343,16 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           });
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.red.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.red.withOpacity(0.3)),
+                            border: Border.all(
+                              color: Colors.red.withOpacity(0.3),
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -345,7 +378,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     ] else if (!_isDashboardExpanded) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF3B82F6).withOpacity(0.2),
                           borderRadius: BorderRadius.circular(10),
@@ -359,7 +395,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           ),
                         ),
                       ),
-                    ]
+                    ],
                   ],
                 ),
               ),
@@ -374,7 +410,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E293B).withOpacity(0.85),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.5),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.12),
+                          width: 1.5,
+                        ),
                         boxShadow: const [
                           BoxShadow(
                             color: Colors.black12,
@@ -392,7 +431,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   Icons.people,
                                   "Total Warga",
                                   totalWarga.toString(),
-                                  Colors.blue,
+                                  const Color(0xFF60A5FA),
                                   isActive: _activeFilter == 'total',
                                   onTap: () => _toggleFilter('total'),
                                 ),
@@ -403,7 +442,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   Icons.volunteer_activism,
                                   "Penerima",
                                   penerimaBansos.toString(),
-                                  Colors.orange,
+                                  const Color(0xFFFB923C),
                                   isActive: _activeFilter == 'penerima',
                                   onTap: () => _toggleFilter('penerima'),
                                 ),
@@ -418,7 +457,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   Icons.check_circle,
                                   "Sudah Cair",
                                   sudahCair.toString(),
-                                  Colors.green,
+                                  const Color(0xFF4ADE80),
                                   isActive: _activeFilter == 'sudah_cair',
                                   onTap: () => _toggleFilter('sudah_cair'),
                                 ),
@@ -429,7 +468,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   Icons.hourglass_bottom,
                                   "Belum Cair",
                                   belumCair.toString(),
-                                  Colors.red,
+                                  const Color(0xFFF87171),
                                   isActive: _activeFilter == 'belum_cair',
                                   onTap: () => _toggleFilter('belum_cair'),
                                 ),
@@ -441,7 +480,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             Icons.location_on,
                             "Rumah Terpetakan",
                             "$terpetakan / $totalWarga",
-                            Colors.purple,
+                            const Color(0xFFC084FC),
                             isHorizontal: true,
                             isActive: _activeFilter == 'terpetakan',
                             onTap: () => _toggleFilter('terpetakan'),
@@ -484,7 +523,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     color: color.withOpacity(0.25),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ]
               : null,
         ),
@@ -493,18 +532,16 @@ class _AdminHomePageState extends State<AdminHomePage> {
             ? Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    icon,
-                    color: color,
-                    size: 24,
-                  ),
+                  Icon(icon, color: color, size: 24),
                   const SizedBox(width: 12),
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black54,
+                      color: isActive
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.7),
                     ),
                   ),
                   const Spacer(),
@@ -521,11 +558,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    icon,
-                    color: color,
-                    size: 24,
-                  ),
+                  Icon(icon, color: color, size: 24),
                   const SizedBox(height: 6),
                   Text(
                     value,
@@ -539,10 +572,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black54,
+                      color: isActive
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -578,10 +613,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   } else if (_activeFilter == 'sudah_cair') {
                     matches = (data['status_cair'] == 'Sudah Menerima');
                   } else if (_activeFilter == 'belum_cair') {
-                    matches = (data['menerima_bantuan'] == 'Ya' &&
+                    matches =
+                        (data['menerima_bantuan'] == 'Ya' &&
                         data['status_cair'] != 'Sudah Menerima');
                   } else if (_activeFilter == 'terpetakan') {
-                    matches = true; // Karena sudah difilter data['lokasi'] != null
+                    matches =
+                        true; // Karena sudah difilter data['lokasi'] != null
                   }
                   if (!matches) continue;
                 }
@@ -589,7 +626,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 GeoPoint geoPoint = data['lokasi'];
                 bool isSelected = (_selectedDocId == doc.id);
                 if (isSelected) {
-                  selectedLatLng = LatLng(geoPoint.latitude, geoPoint.longitude);
+                  selectedLatLng = LatLng(
+                    geoPoint.latitude,
+                    geoPoint.longitude,
+                  );
                 }
 
                 // Logika pewarnaan marker tematik sesuai proposal
@@ -652,7 +692,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
               GoogleMap(
                 mapType: mapProvider.currentMapType,
                 initialCameraPosition: CameraPosition(
-                  target: widget.centerOnLocation ?? const LatLng(-6.850071, 107.930230),
+                  target:
+                      widget.centerOnLocation ??
+                      const LatLng(-6.850071, 107.930230),
                   zoom: 18.0,
                 ),
                 onMapCreated: (controller) {
@@ -660,7 +702,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 },
                 onTap: (point) {
                   FocusScope.of(context).unfocus();
-                  if (_selectedDocId != null) setState(() => _selectedDocId = null);
+                  if (_selectedDocId != null)
+                    setState(() => _selectedDocId = null);
                 },
                 markers: markers,
                 circles: circles,
@@ -690,10 +733,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(30),
                                   child: BackdropFilter(
-                                    filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                    filter: ui.ImageFilter.blur(
+                                      sigmaX: 10,
+                                      sigmaY: 10,
+                                    ),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF1E293B).withOpacity(0.85),
+                                        color: const Color(
+                                          0xFF1E293B,
+                                        ).withOpacity(0.85),
                                         borderRadius: BorderRadius.circular(30),
                                         border: Border.all(
                                           color: Colors.white.withOpacity(0.12),
@@ -703,17 +751,26 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                       child: TextField(
                                         controller: _searchController,
                                         focusNode: _searchFocusNode,
-                                        style: const TextStyle(color: Colors.white),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
                                         decoration: InputDecoration(
                                           hintText: "Cari Data Warga",
-                                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                          hintStyle: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              0.5,
+                                            ),
+                                          ),
                                           filled: false,
                                           prefixIcon: const Padding(
                                             padding: EdgeInsets.only(
                                               left: 15,
                                               right: 10,
                                             ),
-                                            child: Icon(Icons.search, color: Colors.white70),
+                                            child: Icon(
+                                              Icons.search,
+                                              color: Colors.white70,
+                                            ),
                                           ),
                                           suffixIcon: _searchQuery.isNotEmpty
                                               ? GestureDetector(
@@ -729,60 +786,64 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                                   ),
                                                 )
                                               : null,
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            vertical: 14,
-                                            horizontal: 15,
-                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                vertical: 14,
+                                                horizontal: 15,
+                                              ),
                                           border: const OutlineInputBorder(
                                             borderRadius: BorderRadius.all(
                                               Radius.circular(30),
                                             ),
                                             borderSide: BorderSide.none,
                                           ),
-                                          enabledBorder: const OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(
-                                              Radius.circular(30),
-                                            ),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          focusedBorder: const OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(
-                                              Radius.circular(30),
-                                            ),
-                                            borderSide: BorderSide(
-                                              color: Color(0xFF3B82F6),
-                                              width: 1.8,
-                                            ),
-                                          ),
+                                          enabledBorder:
+                                              const OutlineInputBorder(
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(30),
+                                                ),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(30),
+                                                ),
+                                                borderSide: BorderSide(
+                                                  color: Color(0xFF3B82F6),
+                                                  width: 1.8,
+                                                ),
+                                              ),
                                         ),
-                                    textInputAction: TextInputAction.search,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _searchQuery = value;
-                                      });
-                                    },
-                                    onSubmitted: (value) {
-                                      FocusScope.of(context).unfocus();
-                                      if (value.trim().isNotEmpty) {
-                                        _searchController.clear();
-                                        final currentQuery = _searchQuery;
-                                        setState(() {
-                                          _searchQuery = "";
-                                        });
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => SearchResultsPage(
-                                              query: currentQuery,
-                                              isAdmin: true,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    },
+                                        textInputAction: TextInputAction.search,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _searchQuery = value;
+                                          });
+                                        },
+                                        onSubmitted: (value) {
+                                          FocusScope.of(context).unfocus();
+                                          if (value.trim().isNotEmpty) {
+                                            _searchController.clear();
+                                            final currentQuery = _searchQuery;
+                                            setState(() {
+                                              _searchQuery = "";
+                                            });
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    SearchResultsPage(
+                                                      query: currentQuery,
+                                                      isAdmin: true,
+                                                    ),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                ),
                                 ),
 
                                 // Suggestions Overlay
@@ -791,17 +852,37 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(16),
                                     child: BackdropFilter(
-                                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                      filter: ui.ImageFilter.blur(
+                                        sigmaX: 10,
+                                        sigmaY: 10,
+                                      ),
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF1E293B).withOpacity(0.95),
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.5),
+                                          color: const Color(
+                                            0xFF1E293B,
+                                          ).withOpacity(0.95),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(
+                                              0.12,
+                                            ),
+                                            width: 1.5,
+                                          ),
                                         ),
-                                        constraints: const BoxConstraints(maxHeight: 250),
+                                        constraints: const BoxConstraints(
+                                          maxHeight: 250,
+                                        ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(16),
-                                          child: _buildSuggestionsList(context, allWargaDocs, true),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          child: _buildSuggestionsList(
+                                            context,
+                                            allWargaDocs,
+                                            true,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -834,7 +915,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                       Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => const LoginPage(),
+                                          builder: (context) =>
+                                              const LoginPage(),
                                         ),
                                       );
                                     }
@@ -854,13 +936,17 @@ class _AdminHomePageState extends State<AdminHomePage> {
               // Tombol Hapus Rute
               if (mapProvider.polylines.isNotEmpty)
                 Positioned(
-                  bottom: 90, // Lebih tinggi agar tidak menumpuk dengan FAB Tambah Data
+                  bottom:
+                      90, // Lebih tinggi agar tidak menumpuk dengan FAB Tambah Data
                   right: 15,
                   child: FloatingActionButton.extended(
                     onPressed: () => mapProvider.clearRoute(),
                     backgroundColor: Colors.red[800],
                     icon: const Icon(Icons.clear, color: Colors.white),
-                    label: const Text("Hapus Rute", style: TextStyle(color: Colors.white)),
+                    label: const Text(
+                      "Hapus Rute",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
 
@@ -905,20 +991,32 @@ class _AdminHomePageState extends State<AdminHomePage> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF3B82F6),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Tambah Data", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FormWargaPage())),
+        label: const Text(
+          "Tambah Data",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const FormWargaPage()),
+        ),
       ),
     );
   }
 
-  void _showAdminWargaInfo(BuildContext context, String docId, Map<String, dynamic> data) {
+  void _showAdminWargaInfo(
+    BuildContext context,
+    String docId,
+    Map<String, dynamic> data,
+  ) {
     setState(() => _selectedDocId = docId);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
         return WargaInfoSheet(
           docId: docId,
@@ -929,10 +1027,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
             if (data['lokasi'] != null) {
               GeoPoint geo = data['lokasi'];
               final mapProv = context.read<MapProvider>();
-              final success = await mapProv.drawRoute(geo.latitude, geo.longitude);
+              final success = await mapProv.drawRoute(
+                geo.latitude,
+                geo.longitude,
+              );
               if (!success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(mapProv.errorMessage ?? "Gagal memuat rute")),
+                  SnackBar(
+                    content: Text(mapProv.errorMessage ?? "Gagal memuat rute"),
+                  ),
                 );
               }
             }
@@ -948,10 +1051,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => FormWargaPage(
-                  docId: docId,
-                  existingData: data,
-                ),
+                builder: (context) =>
+                    FormWargaPage(docId: docId, existingData: data),
               ),
             );
           },
@@ -974,23 +1075,32 @@ class _AdminHomePageState extends State<AdminHomePage> {
         title: const Text("Hapus Data?"),
         content: Text("Yakin ingin menghapus data '$nama' secara permanen?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(dialogCtx); // Tutup dialog konfirmasi
               Navigator.pop(context); // Tutup bottom sheet info
-              
+
               final wargaProvider = context.read<WargaProvider>();
               final success = await wargaProvider.deleteWarga(docId);
-              
+
               if (mounted) {
                 if (success) {
                   setState(() => _selectedDocId = null);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data Terhapus")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Data Terhapus")),
+                  );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(wargaProvider.errorMessage ?? "Gagal menghapus")),
+                    SnackBar(
+                      content: Text(
+                        wargaProvider.errorMessage ?? "Gagal menghapus",
+                      ),
+                    ),
                   );
                 }
               }
