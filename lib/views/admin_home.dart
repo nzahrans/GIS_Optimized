@@ -97,6 +97,27 @@ class _AdminHomePageState extends State<AdminHomePage> {
     super.dispose();
   }
 
+  @override
+  void _kembaliKeTengah() async {
+      // Ambil controller peta dari provider
+      // (Sesuaikan nama '.mapController' dengan variabel yang ada di MapProvider-mu)
+      final controller = context.read<MapProvider>().mapController; 
+      
+      // Titik pusat awal (hardcode bawaan aplikasimu)
+      const LatLng titikPusat = LatLng(-6.850071, 107.930230); 
+
+      if (controller != null) {
+        await controller.animateCamera(
+          CameraUpdate.newCameraPosition(
+            const CameraPosition(
+              target: titikPusat,
+              zoom: 18.0, // Pastikan zoom-nya sama dengan saat awal buka
+            ),
+          ),
+        );
+      }
+    }
+
   Widget _buildSuggestionsList(
     BuildContext context,
     List<DocumentSnapshot> docs,
@@ -984,31 +1005,84 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                 ),
 
+              // === POSITIONED GABUNGAN TOMBOL PETA & RUTE ===
               Positioned(
-                bottom: mapProvider.polylines.isNotEmpty ? 150 : 90,
-                right: 15,
-                child: FloatingActionButton(
-                  heroTag: "btnMapTypeAdmin",
-                  mini: true,
-                  onPressed: () => mapProvider.toggleMapType(),
-                  backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  foregroundColor: isDark ? Colors.white : Colors.black87,
-                  tooltip: "Ganti Tipe Peta",
-                  child: const Icon(Icons.layers_outlined),
+                bottom: 75, // Cukup tinggi agar tidak menabrak tombol 'Tambah Data'
+                right: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end, // Agar rata kanan
+                  children: [
+                    // 1. Tombol Hapus Rute (Hanya muncul jika ada rute)
+                    if (mapProvider.polylines.isNotEmpty) ...[
+                      FloatingActionButton.extended(
+                        heroTag: "btnHapusRuteAdmin",
+                        onPressed: () => mapProvider.clearRoute(),
+                        backgroundColor: Colors.red[800],
+                        icon: const Icon(Icons.clear, color: Colors.white),
+                        label: const Text(
+                          "Hapus Rute",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 12), // Jarak ke deretan tombol di bawahnya
+                    ],
+
+                    // 2. Barisan Tombol Recenter & Ganti Tipe Peta
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Tombol Kembali ke Tengah (Recenter)
+                        FloatingActionButton(
+                          heroTag: "btnRecenterMapAdmin", // Wajib beda heroTag
+                          mini: true,
+                          backgroundColor: Theme.of(context).colorScheme.surface,
+                          foregroundColor: Theme.of(context).colorScheme.primary,
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onPressed: _kembaliKeTengah,
+                          child: const Icon(Icons.home_outlined),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // Tombol Ganti Tipe Maps
+                        FloatingActionButton(
+                          heroTag: "btnMapTypeAdmin", // Wajib beda heroTag
+                          mini: true,
+                          onPressed: () => mapProvider.toggleMapType(),
+                          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          foregroundColor: isDark ? Colors.white : Colors.black87,
+                          tooltip: "Ganti Tipe Peta",
+                          child: const Icon(Icons.layers_outlined),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ],
+              // === AKHIR POSITIONED GABUNGAN ===
+            ]
           );
         },
       ),
 
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF3B82F6),
+        // Jika dark mode, pakai warna searchbox (1E293B). Jika terang, pakai biru bawaan (3B82F6)
+        backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF3B82F6),
+        
+        // Ikon dan Teks dipaksa selalu putih
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
           "Tambah Data",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white, 
+            fontWeight: FontWeight.bold
+          ),
         ),
+        
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const FormWargaPage()),

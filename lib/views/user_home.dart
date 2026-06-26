@@ -94,6 +94,27 @@ class _UserHomePageState extends State<UserHomePage> {
     super.dispose();
   }
 
+  @override
+  void _kembaliKeTengah() async {
+      // Ambil controller peta dari provider
+      // (Sesuaikan nama '.mapController' dengan variabel yang ada di MapProvider-mu)
+      final controller = context.read<MapProvider>().mapController; 
+      
+      // Titik pusat awal (hardcode bawaan aplikasimu)
+      const LatLng titikPusat = LatLng(-6.850071, 107.930230); 
+
+      if (controller != null) {
+        await controller.animateCamera(
+          CameraUpdate.newCameraPosition(
+            const CameraPosition(
+              target: titikPusat,
+              zoom: 18.0, // Pastikan zoom-nya sama dengan saat awal buka
+            ),
+          ),
+        );
+      }
+    }
+
   Widget _buildSuggestionsList(BuildContext context, List<DocumentSnapshot> docs, bool isAdminPage, bool isDark) {
     final query = _searchQuery.toLowerCase().trim();
     final suggestions = docs.where((doc) {
@@ -316,10 +337,9 @@ class _UserHomePageState extends State<UserHomePage> {
                 myLocationEnabled: true,
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
-                mapToolbarEnabled: true,
+                mapToolbarEnabled: false,
                 padding: const EdgeInsets.only(bottom: 25, left: 10),
               ),
-
               // Search bar dan Login button
               SafeArea(
                 child: Padding(
@@ -450,7 +470,6 @@ class _UserHomePageState extends State<UserHomePage> {
 
                       const SizedBox(width: 10),
                       const SizedBox(width: 10),
-
                       // --- TOMBOL GANTI TEMA ---
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0),
@@ -471,7 +490,6 @@ class _UserHomePageState extends State<UserHomePage> {
                           ),
                         ),
                       ),
-                      
                       const SizedBox(width: 8), // Jarak ke tombol Profil/Logout
 
                       Padding(
@@ -534,18 +552,39 @@ class _UserHomePageState extends State<UserHomePage> {
                   ),
                 ),
 
-              // Tombol Ganti Tipe Peta (Map Type Switcher)
               Positioned(
-                bottom: mapProvider.polylines.isNotEmpty ? 90 : 30,
-                right: 15,
-                child: FloatingActionButton(
-                  heroTag: "btnMapTypeUser",
-                  mini: true,
-                  onPressed: () => mapProvider.toggleMapType(),
-                  backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  foregroundColor: isDark ? Colors.white : Colors.black87,
-                  tooltip: "Ganti Tipe Peta",
-                  child: const Icon(Icons.layers_outlined),
+                bottom: 30, // Sesuaikan dengan posisi bawah aslimu
+                right: 16,  // Sesuaikan dengan posisi kanan aslimu
+                child: Row( // <--- BUNGKUS DENGAN
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                      // 1. Tombol Kembali ke Tengah (Recenter)
+                      FloatingActionButton(
+                        heroTag: "btnRecenterMap", // Wajib beda heroTag
+                        mini: true, 
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        onPressed: _kembaliKeTengah,
+                        child: const Icon(Icons.home_outlined),
+                      ),
+                      
+                      const SizedBox(width: 5), // Jarak antar tombol
+                      
+                      // 2. Tombol Ganti Tipe Maps (Taruh kodemu di sini)
+                      FloatingActionButton(
+                      heroTag: "btnMapTypeUser",
+                      mini: true,
+                      onPressed: () => mapProvider.toggleMapType(),
+                      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      foregroundColor: isDark ? Colors.white : Colors.black87,
+                      tooltip: "Ganti Tipe Peta",
+                      child: const Icon(Icons.layers_outlined),
+                    ),
+                  ],
                 ),
               ),
             ],
