@@ -116,7 +116,7 @@ class AnggotaInfoSheet extends StatelessWidget {
               _buildSectionTitle("INFORMASI KELUARGA", theme),
               const SizedBox(height: 8),
               _infoRow("Nama Kepala Keluarga", parentData['nama'], isDark),
-              _infoRow("No. KK", parentData['no_kk'], isDark),
+              if (isAdmin) _infoRow("No. KK", parentData['no_kk'], isDark),
               const SizedBox(height: 12),
 
               // Status Bansos KK (Mewarisi)

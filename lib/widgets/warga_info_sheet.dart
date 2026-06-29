@@ -134,21 +134,21 @@ class WargaInfoSheet extends StatelessWidget {
                   ),
                 ),
               ],
-              // --- ANGGOTA KELUARGA SECTION ---
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "ANGGOTA KELUARGA",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                      letterSpacing: 0.8,
+              if (isAdmin) ...[
+                // --- ANGGOTA KELUARGA SECTION ---
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "ANGGOTA KELUARGA",
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                        letterSpacing: 0.8,
+                      ),
                     ),
-                  ),
-                  if (isAdmin)
                     TextButton.icon(
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
@@ -169,113 +169,112 @@ class WargaInfoSheet extends StatelessWidget {
                         );
                       },
                     ),
-                ],
-              ),
-              const SizedBox(height: 8),
+                  ],
+                ),
+                const SizedBox(height: 8),
 
-              StreamBuilder<QuerySnapshot>(
-                stream: FirestoreService.getAnggotaStream(docId),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirestoreService.getAnggotaStream(docId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
                         ),
-                      ),
-                    );
-                  }
+                      );
+                    }
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200]!,
-                        ),
-                      ),
-                      child: Text(
-                        "Belum ada data anggota keluarga",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? Colors.white60 : Colors.grey[600],
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  }
-
-                  final docs = snapshot.data!.docs;
-                  return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: docs.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final doc = docs[index];
-                      final anggota = AnggotaKeluarga.fromSnapshot(doc, docId);
-
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                       return Container(
-                        padding: const EdgeInsets.all(10),
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          color: isDark ? const Color(0xFF1E293B) : Colors.grey[50],
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200]!,
                           ),
-                          boxShadow: [
-                            if (!isDark)
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              )
-                          ],
                         ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: anggota.jenisKelamin == 'Wanita'
-                                  ? Colors.pink.withOpacity(0.1)
-                                  : Colors.blue.withOpacity(0.1),
-                              child: Icon(
-                                anggota.jenisKelamin == 'Wanita' ? Icons.female : Icons.male,
-                                size: 16,
-                                color: anggota.jenisKelamin == 'Wanita' ? Colors.pink : Colors.blue,
-                              ),
+                        child: Text(
+                          "Belum ada data anggota keluarga",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white60 : Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }
+
+                    final docs = snapshot.data!.docs;
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: docs.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final doc = docs[index];
+                        final anggota = AnggotaKeluarga.fromSnapshot(doc, docId);
+
+                        return Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200]!,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    anggota.nama,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                  Text(
-                                    "${anggota.hubungan}${isAdmin ? ' • NIK: ${anggota.nik}' : ''}",
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
+                            boxShadow: [
+                              if (!isDark)
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.02),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                )
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: anggota.jenisKelamin == 'Wanita'
+                                    ? Colors.pink.withOpacity(0.1)
+                                    : Colors.blue.withOpacity(0.1),
+                                child: Icon(
+                                  anggota.jenisKelamin == 'Wanita' ? Icons.female : Icons.male,
+                                  size: 16,
+                                  color: anggota.jenisKelamin == 'Wanita' ? Colors.pink : Colors.blue,
+                                ),
                               ),
-                            ),
-                            if (isAdmin) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      anggota.nama,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    Text(
+                                      "${anggota.hubungan}${isAdmin ? ' • NIK: ${anggota.nik}' : ''}",
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                               IconButton(
                                 icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blue),
                                 padding: EdgeInsets.zero,
@@ -301,14 +300,14 @@ class WargaInfoSheet extends StatelessWidget {
                                 onPressed: () => _konfirmasiHapusAnggota(context, docId, anggota),
                               ),
                             ],
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
 
               // Foto Rumah
               if (data['foto_url'] != null && data['foto_url'] != '') //[cite: 1]
