@@ -158,6 +158,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                 'nik': data['nik'] ?? '',
                 'foto_url': data['foto_url'] ?? '',
                 'status_cair': data['status_cair'] ?? '',
+                'menerima_bantuan': data['menerima_bantuan'] ?? 'Tidak',
                 'lokasi': data['lokasi'],
                 'parentDocId': doc.id,
                 'parentData': data,
@@ -194,6 +195,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                 'nik': data['nik'] ?? '',
                 'foto_url': parentData?['foto_url'] ?? '',
                 'status_cair': parentData?['status_cair'] ?? '',
+                'menerima_bantuan': parentData?['menerima_bantuan'] ?? 'Tidak',
                 'lokasi': parentData?['lokasi'],
                 'parentDocId': parentDocId,
                 'parentData': parentData,
@@ -305,6 +307,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                     final blok = suggestion['blok'] as String;
                     final nik = suggestion['nik'] as String;
                     final statusCair = suggestion['status_cair'] as String;
+                    final menerimaBantuan = suggestion['menerima_bantuan'] as String? ?? 'Tidak';
                     final fotoUrl = suggestion['foto_url'] as String;
 
                     return GestureDetector(
@@ -462,7 +465,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                                       ],
                                     ],
                                   ),
-                                  if (widget.isAdmin && statusCair.isNotEmpty) ...[
+                                  if (widget.isAdmin && menerimaBantuan == 'Ya' && statusCair.isNotEmpty) ...[
                                     const SizedBox(height: 6),
                                     _statusBadge(statusCair),
                                   ]
