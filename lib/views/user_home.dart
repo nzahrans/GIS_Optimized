@@ -225,6 +225,7 @@ class _UserHomePageState extends State<UserHomePage> {
             trailing: const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF3B82F6)),
             onTap: () {
               final searchVal = _searchQuery;
+              _searchFocusNode.unfocus();
               _searchController.clear();
               setState(() {
                 _searchQuery = "";
@@ -270,6 +271,7 @@ class _UserHomePageState extends State<UserHomePage> {
           ),
           subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54)),
           onTap: () {
+            _searchFocusNode.unfocus();
             _searchController.clear();
             setState(() {
               _searchQuery = "";

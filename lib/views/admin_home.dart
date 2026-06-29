@@ -237,6 +237,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             ),
             onTap: () {
               final searchVal = _searchQuery;
+              _searchFocusNode.unfocus();
               _searchController.clear();
               setState(() {
                 _searchQuery = "";
@@ -282,6 +283,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           ),
           subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54)),
           onTap: () {
+            _searchFocusNode.unfocus();
             _searchController.clear();
             setState(() {
               _searchQuery = "";
