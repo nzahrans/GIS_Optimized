@@ -250,7 +250,41 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                     String fotoUrl = data['foto_url'] ?? '';
 
                     return GestureDetector(
-                      onTap: () => _showDetailBottomSheet(context, data, doc.id),
+                      onTap: () {
+                        GeoPoint? lokasi = data['lokasi'] as GeoPoint?;
+                        if (lokasi != null) {
+                          LatLng targetLocation = LatLng(lokasi.latitude, lokasi.longitude);
+                          if (widget.isAdmin) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AdminHomePage(
+                                  centerOnLocation: targetLocation,
+                                  highlightDocId: doc.id,
+                                ),
+                              ),
+                              (route) => false,
+                            );
+                          } else {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => UserHomePage(
+                                  centerOnLocation: targetLocation,
+                                  highlightDocId: doc.id,
+                                ),
+                              ),
+                              (route) => false,
+                            );
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Lokasi warga tidak tersedia"),
+                            ),
+                          );
+                        }
+                      },
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -411,261 +445,5 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     );
   }
 
-  void _showDetailBottomSheet(BuildContext context, Map<String, dynamic> data, String docId) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final textColor = isDark ? Colors.white : Colors.black87;
 
-        final nama = data['nama'] ?? 'Tanpa Nama';
-        final nik = data['nik'] ?? '';
-        final noKk = data['no_kk'] ?? '';
-        final blok = data['blok'] ?? '';
-        final menerimaBantuan = data['menerima_bantuan'] ?? 'Tidak';
-        final jenisBantuan = data['jenis_bantuan'] ?? '';
-        final statusCair = data['status_cair'] ?? '';
-        final fotoUrl = data['foto_url'] ?? '';
-        final lokasi = data['lokasi'] as GeoPoint?;
-
-        return SafeArea(
-          child: Container(
-            padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
-            width: double.infinity,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Nama Warga
-                  Text(
-                    nama,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                  const Text(
-                    "Detail Data Kependudukan",
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                  const Divider(height: 24),
-
-                  // Data Utama
-                  const Text(
-                    "DATA WARGA",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: Colors.grey,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (widget.isAdmin) ...[
-                    _profileRow("NIK", nik, isDark),
-                    _profileRow("No. KK", noKk, isDark),
-                  ],
-                  _profileRow("Blok/Gang", blok, isDark),
-                  const SizedBox(height: 20),
-
-                  // Data Bansos (Hanya Tampil untuk Admin)
-                  if (widget.isAdmin) ...[
-                    const Text(
-                      "STATUS BANTUAN SOSIAL",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Colors.grey,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: menerimaBantuan == 'Ya'
-                            ? Colors.green.withOpacity(isDark ? 0.1 : 0.05)
-                            : (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05)),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: menerimaBantuan == 'Ya'
-                              ? Colors.green.withOpacity(isDark ? 0.2 : 0.1)
-                              : (isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2)),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          _profileRow("Penerima Bantuan", menerimaBantuan, isDark),
-                          if (menerimaBantuan == 'Ya') ...[
-                            const Divider(height: 16),
-                            _profileRow("Jenis Bantuan", jenisBantuan, isDark),
-                            _profileRow("Status Pencairan", statusCair, isDark),
-                            if (statusCair == 'Sudah Menerima' &&
-                                data['tanggal_diterima'] != null)
-                              _profileRow(
-                                "Waktu Diterima",
-                                DateFormatter.formatIndonesianDate(data['tanggal_diterima']),
-                                isDark,
-                              ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // Foto Rumah (Hanya Tampil untuk Admin)
-                  if (widget.isAdmin) ...[
-                    if (fotoUrl.isNotEmpty)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 24),
-                        height: 180,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: isDark ? const Color(0xFF1E293B) : Colors.grey[200],
-                          image: DecorationImage(
-                            image: NetworkImage(fotoUrl),
-                            fit: BoxFit.cover,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 24),
-                        height: 120,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE2E8F0)),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.image_not_supported_outlined, size: 36, color: isDark ? Colors.white30 : Colors.grey),
-                            const SizedBox(height: 8),
-                            Text("Foto rumah tidak tersedia", style: TextStyle(color: isDark ? Colors.white54 : Colors.grey, fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                  ],
-
-                  // Aksi
-                  Row(
-                    children: [
-                      if (lokasi != null) ...[
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3B82F6),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            icon: const Icon(Icons.map_outlined),
-                            label: const Text(
-                              "Lihat di Peta",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context); // Tutup Bottom Sheet
-                              LatLng targetLocation = LatLng(lokasi.latitude, lokasi.longitude);
-
-                              if (widget.isAdmin) {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AdminHomePage(
-                                      centerOnLocation: targetLocation,
-                                      highlightDocId: docId,
-                                    ),
-                                  ),
-                                  (route) => false,
-                                );
-                              } else {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => UserHomePage(
-                                      centerOnLocation: targetLocation,
-                                      highlightDocId: docId,
-                                    ),
-                                  ),
-                                  (route) => false,
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: textColor,
-                            side: BorderSide(color: isDark ? Colors.white.withOpacity(0.2) : Colors.grey.withOpacity(0.4)),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            "Tutup",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _profileRow(String label, dynamic value, bool isDark) {
-    if (value == null || value.toString().trim().isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.grey, fontSize: 14),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              value?.toString() ?? '-',
-              textAlign: TextAlign.end,
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isDark ? Colors.white : Colors.black87),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

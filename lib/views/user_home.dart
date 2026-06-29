@@ -25,6 +25,7 @@ class UserHomePage extends StatefulWidget {
 
 class _UserHomePageState extends State<UserHomePage> {
   String? _selectedDocId;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool? _wasLoggedIn;
@@ -42,6 +43,9 @@ class _UserHomePageState extends State<UserHomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.centerOnLocation != null) {
         context.read<MapProvider>().moveCamera(widget.centerOnLocation!, zoom: 19.0);
+      }
+      if (widget.highlightDocId != null) {
+        _fetchAndShowWargaInfo(widget.highlightDocId!);
       }
     });
   }
@@ -271,6 +275,7 @@ class _UserHomePageState extends State<UserHomePage> {
     ''';*/
     
     return Scaffold(
+      key: _scaffoldKey,
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('warga').snapshots(),
         builder: (context, snapshot) {
@@ -594,16 +599,23 @@ class _UserHomePageState extends State<UserHomePage> {
     );
   }
 
+  Future<void> _fetchAndShowWargaInfo(String docId) async {
+    try {
+      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('warga').doc(docId).get();
+      if (doc.exists && mounted) {
+        var data = doc.data() as Map<String, dynamic>;
+        _showWargaInfo(context, docId, data);
+      }
+    } catch (e) {
+      debugPrint("Error fetching warga info: $e");
+    }
+  }
+
   void _showWargaInfo(BuildContext context, String docId, Map<String, dynamic> data) {
     setState(() => _selectedDocId = docId);
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
+    final controller = _scaffoldKey.currentState?.showBottomSheet(
+      (context) {
         return WargaInfoSheet(
           docId: docId,
           data: data,
@@ -629,10 +641,17 @@ class _UserHomePageState extends State<UserHomePage> {
           },
         );
       },
-    ).whenComplete(() {
-      setState(() => _selectedDocId = null);
-      _searchFocusNode.unfocus();
-      FocusScope.of(context).unfocus();
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    );
+
+    controller?.closed.then((_) {
+      if (mounted) {
+        setState(() => _selectedDocId = null);
+        _searchFocusNode.unfocus();
+        FocusScope.of(context).unfocus();
+      }
     });
   }
 

@@ -71,15 +71,24 @@ class WargaInfoSheet extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      data['nama'] ?? 'Tanpa Nama', //[cite: 1]
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor), //[cite: 1]
+                      data['nama'] ?? 'Tanpa Nama',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor),
                     ),
                   ),
-                  if (isAdmin && onDeletePressed != null) //[cite: 1]
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 28), //[cite: 1]
-                      onPressed: onDeletePressed, //[cite: 1]
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isAdmin && onDeletePressed != null)
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red, size: 28),
+                          onPressed: onDeletePressed,
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 28),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
                 ],
               ),
               const Divider(),
