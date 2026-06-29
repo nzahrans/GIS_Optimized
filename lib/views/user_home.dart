@@ -334,7 +334,9 @@ class _UserHomePageState extends State<UserHomePage> {
                 },
                 onTap: (point) {
                   FocusScope.of(context).unfocus();
-                  if (_selectedDocId != null) setState(() => _selectedDocId = null);
+                  if (_selectedDocId != null) {
+                    Navigator.pop(context);
+                  }
                 },
                 markers: markers,
                 circles: circles,

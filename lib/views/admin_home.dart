@@ -731,7 +731,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 onTap: (point) {
                   FocusScope.of(context).unfocus();
                   if (_selectedDocId != null) {
-                    setState(() => _selectedDocId = null);
+                    Navigator.pop(context);
                   }
                 },
                 markers: markers,
@@ -1074,25 +1074,27 @@ class _AdminHomePageState extends State<AdminHomePage> {
         },
       ),
 
-      floatingActionButton: FloatingActionButton.extended(
-        // Jika dark mode, pakai warna searchbox (1E293B). Jika terang, pakai biru bawaan (3B82F6)
-        backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF3B82F6),
-        
-        // Ikon dan Teks dipaksa selalu putih
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          "Tambah Data",
-          style: TextStyle(
-            color: Colors.white, 
-            fontWeight: FontWeight.bold
-          ),
-        ),
-        
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const FormWargaPage()),
-        ),
-      ),
+      floatingActionButton: _selectedDocId != null
+          ? null
+          : FloatingActionButton.extended(
+              // Jika dark mode, pakai warna searchbox (1E293B). Jika terang, pakai biru bawaan (3B82F6)
+              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF3B82F6),
+              
+              // Ikon dan Teks dipaksa selalu putih
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                "Tambah Data",
+                style: TextStyle(
+                  color: Colors.white, 
+                  fontWeight: FontWeight.bold
+                ),
+              ),
+              
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FormWargaPage()),
+              ),
+            ),
     );
   }
 
