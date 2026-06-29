@@ -1069,20 +1069,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 ),
               ),
 
-              if (mapProvider.polylines.isNotEmpty)
-                Positioned(
-                  bottom: 90, 
-                  right: 15,
-                  child: FloatingActionButton.extended(
-                    onPressed: () => mapProvider.clearRoute(),
-                    backgroundColor: Colors.red[800],
-                    icon: const Icon(Icons.clear, color: Colors.white),
-                    label: const Text(
-                      "Hapus Rute",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
 
               if (mapProvider.isLoadingRoute)
                 Center(

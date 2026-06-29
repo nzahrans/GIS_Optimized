@@ -42,9 +42,38 @@ class MapProvider extends ChangeNotifier {
 
   Future<bool> drawRoute(double destLat, double destLng) async {
     _isLoadingRoute = true;
+    _errorMessage = null;
     notifyListeners();
     try {
-      Position position = await Geolocator.getCurrentPosition();
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _errorMessage = 'Layanan lokasi (GPS) dinonaktifkan. Silakan aktifkan GPS pada HP Anda.';
+        _isLoadingRoute = false;
+        notifyListeners();
+        return false;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _errorMessage = 'Izin akses lokasi ditolak.';
+          _isLoadingRoute = false;
+          notifyListeners();
+          return false;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _errorMessage = 'Izin lokasi ditolak permanen. Buka pengaturan aplikasi untuk memberikan izin.';
+        _isLoadingRoute = false;
+        notifyListeners();
+        return false;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
       LatLng start = LatLng(position.latitude, position.longitude);
       LatLng end = LatLng(destLat, destLng);
       List<LatLng> routePoints = await RoutingService.getRoute(start, end);

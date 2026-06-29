@@ -612,18 +612,6 @@ class _UserHomePageState extends State<UserHomePage> {
                 ),
               ),
 
-              // Tombol Hapus Rute
-              if (mapProvider.polylines.isNotEmpty)
-                Positioned(
-                  bottom: 30,
-                  right: 15,
-                  child: FloatingActionButton.extended(
-                    onPressed: () => mapProvider.clearRoute(),
-                    backgroundColor: Colors.red[800],
-                    icon: const Icon(Icons.clear, color: Colors.white),
-                    label: const Text("Hapus Rute", style: TextStyle(color: Colors.white)),
-                  ),
-                ),
 
               // Indikator Loading Rute
               if (mapProvider.isLoadingRoute)
@@ -646,36 +634,52 @@ class _UserHomePageState extends State<UserHomePage> {
                 ),
 
               Positioned(
-                bottom: 30, // Sesuaikan dengan posisi bawah aslimu
-                right: 16,  // Sesuaikan dengan posisi kanan aslimu
-                child: Row( // <--- BUNGKUS DENGAN
+                bottom: 30,
+                right: 16,
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                      // 1. Tombol Kembali ke Tengah (Recenter)
-                      FloatingActionButton(
-                        heroTag: "btnRecenterMap", // Wajib beda heroTag
-                        mini: true, 
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        foregroundColor: Theme.of(context).colorScheme.primary,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        onPressed: _kembaliKeTengah,
-                        child: const Icon(Icons.home_outlined),
+                    if (mapProvider.polylines.isNotEmpty) ...[
+                      FloatingActionButton.extended(
+                        heroTag: "btnHapusRuteUser",
+                        onPressed: () => mapProvider.clearRoute(),
+                        backgroundColor: Colors.red[800],
+                        icon: const Icon(Icons.clear, color: Colors.white),
+                        label: const Text("Hapus Rute", style: TextStyle(color: Colors.white)),
                       ),
-                      
-                      const SizedBox(width: 5), // Jarak antar tombol
-                      
-                      // 2. Tombol Ganti Tipe Maps (Taruh kodemu di sini)
-                      FloatingActionButton(
-                      heroTag: "btnMapTypeUser",
-                      mini: true,
-                      onPressed: () => mapProvider.toggleMapType(),
-                      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      foregroundColor: isDark ? Colors.white : Colors.black87,
-                      tooltip: "Ganti Tipe Peta",
-                      child: const Icon(Icons.layers_outlined),
+                      const SizedBox(height: 12),
+                    ],
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 1. Tombol Kembali ke Tengah (Recenter)
+                        FloatingActionButton(
+                          heroTag: "btnRecenterMapUser",
+                          mini: true, 
+                          backgroundColor: Theme.of(context).colorScheme.surface,
+                          foregroundColor: Theme.of(context).colorScheme.primary,
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onPressed: _kembaliKeTengah,
+                          child: const Icon(Icons.home_outlined),
+                        ),
+                        
+                        const SizedBox(width: 5), // Jarak antar tombol
+                        
+                        // 2. Tombol Ganti Tipe Maps
+                        FloatingActionButton(
+                          heroTag: "btnMapTypeUser",
+                          mini: true,
+                          onPressed: () => mapProvider.toggleMapType(),
+                          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          foregroundColor: isDark ? Colors.white : Colors.black87,
+                          tooltip: "Ganti Tipe Peta",
+                          child: const Icon(Icons.layers_outlined),
+                        ),
+                      ],
                     ),
                   ],
                 ),
