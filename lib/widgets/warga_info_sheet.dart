@@ -213,14 +213,58 @@ class WargaInfoSheet extends StatelessWidget {
                     }
 
                     final docs = snapshot.data!.docs;
+                    
+                    DateTime? getBirthDateFromNik(String nik) {
+                      if (nik.length < 12) return null;
+                      try {
+                        final ddStr = nik.substring(6, 8);
+                        final mmStr = nik.substring(8, 10);
+                        final yyStr = nik.substring(10, 12);
+                        
+                        int day = int.parse(ddStr);
+                        if (day > 40) {
+                          day -= 40;
+                        }
+                        final month = int.parse(mmStr);
+                        final yy = int.parse(yyStr);
+                        
+                        final currentYearLastTwo = DateTime.now().year % 100;
+                        final year = yy + (yy <= currentYearLastTwo ? 2000 : 1900);
+                        
+                        return DateTime(year, month, day);
+                      } catch (_) {
+                        return null;
+                      }
+                    }
+
+                    final anggotaList = docs.map((doc) => AnggotaKeluarga.fromSnapshot(doc, docId)).toList();
+                    
+                    anggotaList.sort((a, b) {
+                      final aIsIstri = a.hubungan.toLowerCase() == 'istri';
+                      final bIsIstri = b.hubungan.toLowerCase() == 'istri';
+                      
+                      if (aIsIstri && !bIsIstri) return -1;
+                      if (!aIsIstri && bIsIstri) return 1;
+                      
+                      final aBirthDate = getBirthDateFromNik(a.nik);
+                      final bBirthDate = getBirthDateFromNik(b.nik);
+                      
+                      if (aBirthDate != null && bBirthDate != null) {
+                        return aBirthDate.compareTo(bBirthDate);
+                      }
+                      if (aBirthDate != null && bBirthDate == null) return -1;
+                      if (aBirthDate == null && bBirthDate != null) return 1;
+                      
+                      return a.nik.compareTo(b.nik);
+                    });
+
                     return ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: docs.length,
+                      itemCount: anggotaList.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
-                        final doc = docs[index];
-                        final anggota = AnggotaKeluarga.fromSnapshot(doc, docId);
+                        final anggota = anggotaList[index];
 
                         return Container(
                           padding: const EdgeInsets.all(10),
