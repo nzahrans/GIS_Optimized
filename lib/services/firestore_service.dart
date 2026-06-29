@@ -53,15 +53,13 @@ class FirestoreService {
     // 2. Cek di subkoleksi anggota_keluarga
     final queryAnggota = await _db
         .collectionGroup('anggota_keluarga')
+        .where('nik', isEqualTo: nik.trim())
+        .limit(1)
         .get();
 
-    for (var doc in queryAnggota.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      final docNik = (data['nik'] ?? '').toString().trim();
-      if (docNik == nik.trim()) {
-        if (excludeDocId == null || doc.id != excludeDocId) {
-          return true;
-        }
+    if (queryAnggota.docs.isNotEmpty) {
+      if (excludeDocId == null || queryAnggota.docs.first.id != excludeDocId) {
+        return true;
       }
     }
 
