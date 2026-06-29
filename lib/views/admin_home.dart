@@ -807,7 +807,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
           return Stack(
             children: [
               GoogleMap(
-                key: ValueKey("map_${isDark}"),
                 mapId: activeMapId,
                 mapType: mapProvider.currentMapType,
                 initialCameraPosition: CameraPosition(
