@@ -410,14 +410,19 @@ class WargaInfoSheet extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-          Text(
-            value?.toString() ?? '-',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-              color: isDark ? Colors.white : Colors.black87,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value?.toString() ?? '-',
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
             ),
           ),
         ],
