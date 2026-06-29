@@ -34,6 +34,7 @@ class UserHomePage extends StatefulWidget {
 
 class _UserHomePageState extends State<UserHomePage> {
   String? _selectedDocId;
+  PersistentBottomSheetController? _activeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -735,9 +736,14 @@ class _UserHomePageState extends State<UserHomePage> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     );
 
+    _activeController = controller;
+
     controller?.closed.then((_) {
-      if (mounted) {
-        setState(() => _selectedDocId = null);
+      if (mounted && _activeController == controller) {
+        setState(() {
+          _selectedDocId = null;
+          _activeController = null;
+        });
         _searchFocusNode.unfocus();
         FocusScope.of(context).unfocus();
       }
@@ -1284,9 +1290,14 @@ class _UserHomePageState extends State<UserHomePage> {
       ),
     );
 
+    _activeController = controller;
+
     controller?.closed.then((_) {
-      if (mounted) {
-        setState(() => _selectedDocId = null);
+      if (mounted && _activeController == controller) {
+        setState(() {
+          _selectedDocId = null;
+          _activeController = null;
+        });
         _searchFocusNode.unfocus();
         FocusScope.of(context).unfocus();
       }

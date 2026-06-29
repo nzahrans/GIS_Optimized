@@ -36,6 +36,7 @@ class AdminHomePage extends StatefulWidget {
 
 class _AdminHomePageState extends State<AdminHomePage> {
   String? _selectedDocId;
+  PersistentBottomSheetController? _activeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isDashboardExpanded = false;
   String? _activeFilter;
@@ -352,243 +353,252 @@ class _AdminHomePageState extends State<AdminHomePage> {
     }
   }
 
-  Widget _buildDashboardCards(bool isDark) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('warga').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
+  Widget _buildDashboardCards(bool isDark, List<DocumentSnapshot> wargaDocs, List<DocumentSnapshot> anggotaDocs) {
+    final totalKK = wargaDocs.length;
+    final totalAnggota = anggotaDocs.length;
+    final totalPenduduk = totalKK + totalAnggota;
 
-        final docs = snapshot.data!.docs;
-        final totalWarga = docs.length;
+    final penerimaBansos = wargaDocs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['menerima_bantuan'] == 'Ya';
+    }).length;
 
-        final penerimaBansos = docs.where((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return data['menerima_bantuan'] == 'Ya';
-        }).length;
+    final sudahCair = wargaDocs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['status_cair'] == 'Sudah Menerima';
+    }).length;
 
-        final sudahCair = docs.where((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return data['status_cair'] == 'Sudah Menerima';
-        }).length;
+    final belumCair = wargaDocs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['menerima_bantuan'] == 'Ya' &&
+          data['status_cair'] != 'Sudah Menerima';
+    }).length;
 
-        final belumCair = docs.where((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return data['menerima_bantuan'] == 'Ya' &&
-              data['status_cair'] != 'Sudah Menerima';
-        }).length;
+    final terpetakan = wargaDocs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['lokasi'] != null;
+    }).length;
 
-        final terpetakan = docs.where((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return data['lokasi'] != null;
-        }).length;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isDashboardExpanded = !_isDashboardExpanded;
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B).withOpacity(0.85) : Colors.white.withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
-                    width: 1.5,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _isDashboardExpanded = !_isDashboardExpanded;
+            });
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B).withOpacity(0.85) : Colors.white.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 10,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _isDashboardExpanded
+                      ? Icons.arrow_drop_down
+                      : Icons.arrow_right,
+                  color: isDark ? Colors.white70 : Colors.black87,
+                  size: 24,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  "Ringkasan Data",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
-                  boxShadow: [
-                    if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
-                  ],
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _isDashboardExpanded
-                          ? Icons.arrow_drop_down
-                          : Icons.arrow_right,
-                      color: isDark ? Colors.white70 : Colors.black87,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      "Ringkasan Data",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: isDark ? Colors.white : Colors.black87,
+                if (_activeFilter != null) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _activeFilter = null;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
                       ),
-                    ),
-                    if (_activeFilter != null) ...[
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _activeFilter = null;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.red.withOpacity(0.3),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.red.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "Filter: ${_getFilterName(_activeFilter!)}",
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "Filter: ${_getFilterName(_activeFilter!)}",
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.close,
-                                size: 10,
-                                color: Colors.red,
-                              ),
-                            ],
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.close,
+                            size: 10,
+                            color: Colors.red,
                           ),
-                        ),
+                        ],
                       ),
-                    ] else if (!_isDashboardExpanded) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3B82F6).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          "$totalWarga Warga",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF3B82F6),
+                    ),
+                  ),
+                ] else if (!_isDashboardExpanded) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3B82F6).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      "$totalKK KK / $totalPenduduk Jiwa",
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF3B82F6),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: _isDashboardExpanded
+              ? Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B).withOpacity(0.85) : Colors.white.withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6, offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _statCard(
+                              Icons.home,
+                              "Total KK",
+                              totalKK.toString(),
+                              const Color(0xFF60A5FA),
+                              isActive: _activeFilter == 'total',
+                              isDark: isDark,
+                              onTap: () => _toggleFilter('total'),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _statCard(
+                              Icons.groups,
+                              "Total Penduduk",
+                              totalPenduduk.toString(),
+                              const Color(0xFF38BDF8),
+                              isActive: false,
+                              isDark: isDark,
+                              onTap: () {}, // Hanya tampilan
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _statCard(
+                              Icons.volunteer_activism,
+                              "Penerima",
+                              penerimaBansos.toString(),
+                              const Color(0xFFFB923C),
+                              isActive: _activeFilter == 'penerima',
+                              isDark: isDark,
+                              onTap: () => _toggleFilter('penerima'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _statCard(
+                              Icons.check_circle,
+                              "Sudah Cair",
+                              sudahCair.toString(),
+                              const Color(0xFF4ADE80),
+                              isActive: _activeFilter == 'sudah_cair',
+                              isDark: isDark,
+                              onTap: () => _toggleFilter('sudah_cair'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _statCard(
+                              Icons.hourglass_bottom,
+                              "Belum Cair",
+                              belumCair.toString(),
+                              const Color(0xFFF87171),
+                              isActive: _activeFilter == 'belum_cair',
+                              isDark: isDark,
+                              onTap: () => _toggleFilter('belum_cair'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _statCard(
+                              Icons.location_on,
+                              "KK Terpetakan",
+                              "$terpetakan / $totalKK",
+                              const Color(0xFFC084FC),
+                              isActive: _activeFilter == 'terpetakan',
+                              isDark: isDark,
+                              onTap: () => _toggleFilter('terpetakan'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ],
-                ),
-              ),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              child: _isDashboardExpanded
-                  ? Container(
-                      margin: const EdgeInsets.only(top: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B).withOpacity(0.85) : Colors.white.withOpacity(0.95),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6, offset: const Offset(0, 3)),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _statCard(
-                                  Icons.people,
-                                  "Total Warga",
-                                  totalWarga.toString(),
-                                  const Color(0xFF60A5FA),
-                                  isActive: _activeFilter == 'total',
-                                  isDark: isDark,
-                                  onTap: () => _toggleFilter('total'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _statCard(
-                                  Icons.volunteer_activism,
-                                  "Penerima",
-                                  penerimaBansos.toString(),
-                                  const Color(0xFFFB923C),
-                                  isActive: _activeFilter == 'penerima',
-                                  isDark: isDark,
-                                  onTap: () => _toggleFilter('penerima'),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _statCard(
-                                  Icons.check_circle,
-                                  "Sudah Cair",
-                                  sudahCair.toString(),
-                                  const Color(0xFF4ADE80),
-                                  isActive: _activeFilter == 'sudah_cair',
-                                  isDark: isDark,
-                                  onTap: () => _toggleFilter('sudah_cair'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _statCard(
-                                  Icons.hourglass_bottom,
-                                  "Belum Cair",
-                                  belumCair.toString(),
-                                  const Color(0xFFF87171),
-                                  isActive: _activeFilter == 'belum_cair',
-                                  isDark: isDark,
-                                  onTap: () => _toggleFilter('belum_cair'),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          _statCard(
-                            Icons.location_on,
-                            "Rumah Terpetakan",
-                            "$terpetakan / $totalWarga",
-                            const Color(0xFFC084FC),
-                            isHorizontal: true,
-                            isActive: _activeFilter == 'terpetakan',
-                            isDark: isDark,
-                            onTap: () => _toggleFilter('terpetakan'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
-        );
-      },
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 
@@ -1052,7 +1062,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           ),
                         ],
                       ),
-                      if (_searchQuery.isEmpty) _buildDashboardCards(isDark),
+                      if (_searchQuery.isEmpty)
+                        _buildDashboardCards(isDark, allWargaDocs, allAnggotaDocs),
                     ],
                   ),
                 ),
@@ -1253,9 +1264,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
       ),
     );
 
+    _activeController = controller;
+
     controller?.closed.then((_) {
-      if (mounted) {
-        setState(() => _selectedDocId = null);
+      if (mounted && _activeController == controller) {
+        setState(() {
+          _selectedDocId = null;
+          _activeController = null;
+        });
         _searchFocusNode.unfocus();
         FocusScope.of(context).unfocus();
       }
@@ -1369,9 +1385,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
       ),
     );
 
+    _activeController = controller;
+
     controller?.closed.then((_) {
-      if (mounted) {
-        setState(() => _selectedDocId = null);
+      if (mounted && _activeController == controller) {
+        setState(() {
+          _selectedDocId = null;
+          _activeController = null;
+        });
         _searchFocusNode.unfocus();
         FocusScope.of(context).unfocus();
       }
