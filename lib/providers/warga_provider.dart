@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/warga.dart';
+import '../models/anggota_keluarga.dart';
 import '../services/firestore_service.dart';
 
 class WargaProvider extends ChangeNotifier {
@@ -200,13 +201,20 @@ class WargaProvider extends ChangeNotifier {
     }
   }
 
-  /// Hapus data warga
+  /// Hapus data warga beserta semua anggota keluarganya
   Future<bool> deleteWarga(String docId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      // 1. Ambil semua anggota keluarga terlebih dahulu dan hapus
+      final anggotaSnapshot = await FirestoreService.getAnggotaOnce(docId);
+      for (var doc in anggotaSnapshot.docs) {
+        await FirestoreService.deleteAnggota(docId, doc.id);
+      }
+
+      // 2. Hapus dokumen warga utama
       await FirestoreService.deleteWarga(docId);
       _isLoading = false;
       notifyListeners();
@@ -214,6 +222,63 @@ class WargaProvider extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       _errorMessage = 'Gagal menghapus data warga: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Tambah data anggota keluarga
+  Future<bool> addAnggota(String wargaDocId, AnggotaKeluarga anggota) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await FirestoreService.addAnggota(wargaDocId, anggota.toMap());
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Gagal menambahkan anggota keluarga: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Update data anggota keluarga
+  Future<bool> updateAnggota(String wargaDocId, String anggotaDocId, AnggotaKeluarga anggota) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await FirestoreService.updateAnggota(wargaDocId, anggotaDocId, anggota.toMap());
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Gagal memperbarui data anggota keluarga: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Hapus data anggota keluarga
+  Future<bool> deleteAnggota(String wargaDocId, String anggotaDocId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await FirestoreService.deleteAnggota(wargaDocId, anggotaDocId);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Gagal menghapus data anggota keluarga: $e';
       notifyListeners();
       return false;
     }

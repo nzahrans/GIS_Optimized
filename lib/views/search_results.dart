@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'user_home.dart';
 import 'admin_home.dart';
-import '../utils/date_formatter.dart';
 
 class SearchResultsPage extends StatefulWidget {
   final String query;
@@ -18,14 +17,18 @@ class SearchResultsPage extends StatefulWidget {
 class _SearchResultsPageState extends State<SearchResultsPage> {
   late String _currentQuery;
   late TextEditingController _searchController;
-  final Future<QuerySnapshot> _wargaFuture =
-      FirebaseFirestore.instance.collection('warga').get();
+  
+  late final Future<List<QuerySnapshot>> _searchFuture;
 
   @override
   void initState() {
     super.initState();
     _currentQuery = widget.query;
     _searchController = TextEditingController(text: _currentQuery);
+    _searchFuture = Future.wait([
+      FirebaseFirestore.instance.collection('warga').get(),
+      FirebaseFirestore.instance.collectionGroup('anggota_keluarga').get(),
+    ]);
   }
 
   @override
@@ -36,8 +39,9 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = theme.scaffoldBackgroundColor;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subTextColor = isDark ? Colors.white.withOpacity(0.6) : Colors.grey[600];
 
@@ -111,8 +115,8 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
           ),
         ),
       ),
-      body: FutureBuilder<QuerySnapshot>(
-        future: _wargaFuture,
+      body: FutureBuilder<List<QuerySnapshot>>(
+        future: _searchFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -126,26 +130,80 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             );
           }
 
-          if (!snapshot.hasData) {
+          if (!snapshot.hasData || snapshot.data!.length < 2) {
             return Center(
               child: Text('Data tidak tersedia', style: TextStyle(color: textColor)),
             );
           }
 
-          final allDocs = snapshot.data!.docs;
+          final wargaDocs = snapshot.data![0].docs;
+          final anggotaDocs = snapshot.data![1].docs;
+          
+          final List<Map<String, dynamic>> combinedResults = [];
+          final search = _currentQuery.toLowerCase().trim();
 
-          final filteredDocs = allDocs.where((doc) {
+          // 1. Filter warga (KK)
+          for (var doc in wargaDocs) {
             final data = doc.data() as Map<String, dynamic>;
-
             final nama = (data['nama'] ?? '').toString().toLowerCase();
             final nik = (data['nik'] ?? '').toString().toLowerCase();
             final blok = (data['blok'] ?? '').toString().toLowerCase();
-            final search = _currentQuery.toLowerCase().trim();
 
-            return nama.contains(search) || nik.contains(search) || blok.contains(search);
-          }).toList();
+            if (nama.contains(search) || nik.contains(search) || blok.contains(search)) {
+              combinedResults.add({
+                'isAnggota': false,
+                'id': doc.id,
+                'nama': data['nama'] ?? 'Tanpa Nama',
+                'blok': data['blok'] ?? '',
+                'nik': data['nik'] ?? '',
+                'foto_url': data['foto_url'] ?? '',
+                'status_cair': data['status_cair'] ?? '',
+                'lokasi': data['lokasi'],
+                'parentDocId': doc.id,
+                'parentData': data,
+              });
+            }
+          }
 
-          if (filteredDocs.isEmpty) {
+          // 2. Filter anggota keluarga
+          for (var doc in anggotaDocs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final nama = (data['nama'] ?? '').toString().toLowerCase();
+            final nik = (data['nik'] ?? '').toString().toLowerCase();
+
+            if (nama.contains(search) || nik.contains(search)) {
+              String parentDocId = '';
+              String parentName = 'Tidak diketahui';
+              Map<String, dynamic>? parentData;
+              final parentId = doc.reference.parent.parent?.id;
+              
+              if (parentId != null) {
+                try {
+                  final parentDoc = wargaDocs.firstWhere((w) => w.id == parentId);
+                  parentDocId = parentDoc.id;
+                  parentData = parentDoc.data() as Map<String, dynamic>?;
+                  parentName = parentData?['nama'] ?? 'Tidak diketahui';
+                } catch (_) {}
+              }
+
+              combinedResults.add({
+                'isAnggota': true,
+                'id': doc.id,
+                'nama': data['nama'] ?? 'Tanpa Nama',
+                'blok': parentData?['blok'] ?? '',
+                'nik': data['nik'] ?? '',
+                'foto_url': parentData?['foto_url'] ?? '',
+                'status_cair': parentData?['status_cair'] ?? '',
+                'lokasi': parentData?['lokasi'],
+                'parentDocId': parentDocId,
+                'parentData': parentData,
+                'hubungan': data['hubungan'] ?? 'Anggota',
+                'parentKkName': parentName,
+              });
+            }
+          }
+
+          if (combinedResults.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40.0),
@@ -224,7 +282,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Menampilkan ${filteredDocs.length} data warga yang cocok',
+                      'Menampilkan ${combinedResults.length} hasil yang cocok',
                       style: TextStyle(
                         fontSize: 14,
                         color: subTextColor,
@@ -238,20 +296,20 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  itemCount: filteredDocs.length,
+                  itemCount: combinedResults.length,
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    var doc = filteredDocs[index];
-                    var data = doc.data() as Map<String, dynamic>;
-                    String nama = data['nama'] ?? 'Tanpa Nama';
-                    String blok = data['blok'] ?? '';
-                    String nik = data['nik'] ?? '';
-                    String statusCair = data['status_cair'] ?? '';
-                    String fotoUrl = data['foto_url'] ?? '';
+                    final suggestion = combinedResults[index];
+                    final isAnggota = suggestion['isAnggota'] as bool;
+                    final nama = suggestion['nama'] as String;
+                    final blok = suggestion['blok'] as String;
+                    final nik = suggestion['nik'] as String;
+                    final statusCair = suggestion['status_cair'] as String;
+                    final fotoUrl = suggestion['foto_url'] as String;
 
                     return GestureDetector(
                       onTap: () {
-                        GeoPoint? lokasi = data['lokasi'] as GeoPoint?;
+                        GeoPoint? lokasi = suggestion['lokasi'] as GeoPoint?;
                         if (lokasi != null) {
                           LatLng targetLocation = LatLng(lokasi.latitude, lokasi.longitude);
                           if (widget.isAdmin) {
@@ -260,7 +318,8 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                               MaterialPageRoute(
                                 builder: (context) => AdminHomePage(
                                   centerOnLocation: targetLocation,
-                                  highlightDocId: doc.id,
+                                  highlightDocId: suggestion['parentDocId'],
+                                  highlightAnggotaId: isAnggota ? suggestion['id'] : null,
                                 ),
                               ),
                               (route) => false,
@@ -271,7 +330,8 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                               MaterialPageRoute(
                                 builder: (context) => UserHomePage(
                                   centerOnLocation: targetLocation,
-                                  highlightDocId: doc.id,
+                                  highlightDocId: suggestion['parentDocId'],
+                                  highlightAnggotaId: isAnggota ? suggestion['id'] : null,
                                 ),
                               ),
                               (route) => false,
@@ -319,15 +379,17 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(12),
                                         gradient: LinearGradient(
-                                          colors: widget.isAdmin
-                                              ? [Colors.red[400]!, Colors.red[700]!]
-                                              : [const Color(0xFF3B82F6), const Color(0xFF2563EB)],
+                                          colors: isAnggota
+                                              ? [Colors.purple[400]!, Colors.purple[700]!]
+                                              : (widget.isAdmin
+                                                  ? [Colors.red[400]!, Colors.red[700]!]
+                                                  : [const Color(0xFF3B82F6), const Color(0xFF2563EB)]),
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
                                       ),
-                                      child: const Icon(
-                                        Icons.person_outline,
+                                      child: Icon(
+                                        isAnggota ? Icons.people_outline : Icons.person_outline,
                                         color: Colors.white,
                                         size: 26,
                                       ),
@@ -351,7 +413,20 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
+                                  if (isAnggota) ...[
+                                    Text(
+                                      "${suggestion['hubungan']} • KK: ${suggestion['parentKkName']}",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                  ],
                                   Row(
                                     children: [
                                       if (blok.isNotEmpty) ...[
@@ -374,11 +449,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                                         const SizedBox(width: 8),
                                       ],
                                       if (widget.isAdmin && nik.isNotEmpty) ...[
-                                        Text(
-                                          "NIK $nik",
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[500],
+                                        Expanded(
+                                          child: Text(
+                                            "NIK $nik",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[500],
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],
@@ -444,6 +522,4 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       ),
     );
   }
-
-
 }

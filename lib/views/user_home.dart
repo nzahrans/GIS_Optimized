@@ -11,13 +11,22 @@ import '../providers/map_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart'; // Import ThemeProvider
 import '../widgets/warga_info_sheet.dart';
+import '../widgets/anggota_info_sheet.dart';
+import '../models/anggota_keluarga.dart';
+import '../services/firestore_service.dart';
 import '../utils/date_formatter.dart';
 
 class UserHomePage extends StatefulWidget {
   final LatLng? centerOnLocation;
   final String? highlightDocId;
+  final String? highlightAnggotaId;
 
-  const UserHomePage({super.key, this.centerOnLocation, this.highlightDocId});
+  const UserHomePage({
+    super.key,
+    this.centerOnLocation,
+    this.highlightDocId,
+    this.highlightAnggotaId,
+  });
 
   @override
   State<UserHomePage> createState() => _UserHomePageState();
@@ -45,7 +54,11 @@ class _UserHomePageState extends State<UserHomePage> {
         context.read<MapProvider>().moveCamera(widget.centerOnLocation!, zoom: 19.0);
       }
       if (widget.highlightDocId != null) {
-        _fetchAndShowWargaInfo(widget.highlightDocId!);
+        if (widget.highlightAnggotaId != null) {
+          _fetchAndShowAnggotaInfo(widget.highlightDocId!, widget.highlightAnggotaId!);
+        } else {
+          _fetchAndShowWargaInfo(widget.highlightDocId!);
+        }
       }
     });
   }
@@ -119,32 +132,83 @@ class _UserHomePageState extends State<UserHomePage> {
       }
     }
 
-  Widget _buildSuggestionsList(BuildContext context, List<DocumentSnapshot> docs, bool isAdminPage, bool isDark) {
+  Widget _buildSuggestionsList(
+    BuildContext context,
+    List<DocumentSnapshot> wargaDocs,
+    List<DocumentSnapshot> anggotaDocs,
+    bool isAdminPage,
+    bool isDark,
+  ) {
     final query = _searchQuery.toLowerCase().trim();
-    final suggestions = docs.where((doc) {
+    final List<Map<String, dynamic>> combinedSuggestions = [];
+
+    // 1. Filter warga (KK)
+    for (var doc in wargaDocs) {
       final data = doc.data() as Map<String, dynamic>;
       final nama = (data['nama'] ?? '').toString().toLowerCase();
       final nik = (data['nik'] ?? '').toString().toLowerCase();
       final blok = (data['blok'] ?? '').toString().toLowerCase();
-      return nama.contains(query) ||
-          nik.contains(query) ||
-          blok.contains(query);
-    }).toList();
 
-    if (suggestions.isEmpty) {
+      if (nama.contains(query) || nik.contains(query) || blok.contains(query)) {
+        combinedSuggestions.add({
+          'isAnggota': false,
+          'id': doc.id,
+          'nama': data['nama'] ?? 'Tanpa Nama',
+          'subtitle': (data['blok'] ?? '').toString().isNotEmpty ? 'Blok ${data['blok']}' : 'Kepala Keluarga',
+          'data': data,
+          'parentDocId': doc.id,
+          'parentData': data,
+          'lokasi': data['lokasi'],
+        });
+      }
+    }
+
+    // 2. Filter anggota keluarga
+    for (var doc in anggotaDocs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final nama = (data['nama'] ?? '').toString().toLowerCase();
+      final nik = (data['nik'] ?? '').toString().toLowerCase();
+
+      if (nama.contains(query) || nik.contains(query)) {
+        String parentKkName = 'Tidak diketahui';
+        Map<String, dynamic>? parentKkData;
+        final parentDocId = doc.reference.parent.parent?.id;
+        
+        if (parentDocId != null) {
+          try {
+            final parentDoc = wargaDocs.firstWhere((w) => w.id == parentDocId);
+            parentKkData = parentDoc.data() as Map<String, dynamic>?;
+            parentKkName = parentKkData?['nama'] ?? 'Tidak diketahui';
+          } catch (_) {}
+        }
+
+        combinedSuggestions.add({
+          'isAnggota': true,
+          'id': doc.id,
+          'nama': data['nama'] ?? 'Tanpa Nama',
+          'subtitle': "${data['hubungan'] ?? 'Anggota'} • KK: $parentKkName",
+          'data': data,
+          'parentDocId': parentDocId ?? '',
+          'parentData': parentKkData,
+          'lokasi': parentKkData?['lokasi'],
+        });
+      }
+    }
+
+    if (combinedSuggestions.isEmpty) {
       return ListTile(
         leading: const Icon(Icons.search_off, color: Colors.grey),
         title: const Text("Tidak ada hasil cocok", style: TextStyle(color: Colors.grey)),
       );
     }
 
-    final displayList = suggestions.take(5).toList();
+    final displayList = combinedSuggestions.take(5).toList();
 
     return ListView.separated(
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.zero,
-      itemCount: displayList.length + (suggestions.length > 5 ? 1 : 0),
+      itemCount: displayList.length + (combinedSuggestions.length > 5 ? 1 : 0),
       separatorBuilder: (context, index) => Divider(height: 1, color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.withOpacity(0.2)),
       itemBuilder: (context, index) {
         if (index == displayList.length) {
@@ -179,29 +243,32 @@ class _UserHomePageState extends State<UserHomePage> {
           );
         }
 
-        final doc = displayList[index];
-        final data = doc.data() as Map<String, dynamic>;
-        final nama = data['nama'] ?? 'Tanpa Nama';
-        final blok = data['blok'] ?? '';
+        final suggestion = displayList[index];
+        final isAnggota = suggestion['isAnggota'] as bool;
+        final nama = suggestion['nama'] as String;
+        final subtitle = suggestion['subtitle'] as String;
+        final locations = suggestion['lokasi'];
 
         return ListTile(
           dense: true,
           leading: CircleAvatar(
             radius: 14,
-            backgroundColor: isAdminPage ? Colors.red.withOpacity(0.2) : const Color(0xFF3B82F6).withOpacity(0.2),
+            backgroundColor: isAnggota
+                ? (isDark ? Colors.purple.withOpacity(0.2) : Colors.purple.withOpacity(0.1))
+                : (isAdminPage ? Colors.red.withOpacity(0.2) : const Color(0xFF3B82F6).withOpacity(0.2)),
             child: Icon(
-              Icons.location_on_outlined,
+              isAnggota ? Icons.people_outline : Icons.location_on_outlined,
               size: 16,
-              color: isAdminPage ? Colors.red : const Color(0xFF3B82F6),
+              color: isAnggota
+                  ? Colors.purple
+                  : (isAdminPage ? Colors.red : const Color(0xFF3B82F6)),
             ),
           ),
           title: Text(
             nama,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isDark ? Colors.white : Colors.black87),
           ),
-          subtitle: blok.toString().isNotEmpty
-              ? Text("Blok $blok", style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54))
-              : null,
+          subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54)),
           onTap: () {
             _searchController.clear();
             setState(() {
@@ -209,12 +276,23 @@ class _UserHomePageState extends State<UserHomePage> {
             });
             FocusScope.of(context).unfocus();
 
-            if (data['lokasi'] != null) {
-              GeoPoint geo = data['lokasi'];
+            if (locations != null) {
+              GeoPoint geo = locations;
               LatLng targetLatLng = LatLng(geo.latitude, geo.longitude);
 
               context.read<MapProvider>().moveCamera(targetLatLng, zoom: 19.0);
-              _showWargaInfo(context, doc.id, data);
+              
+              if (isAnggota) {
+                _showAnggotaInfo(
+                  context,
+                  suggestion['id'],
+                  suggestion['data'],
+                  suggestion['parentDocId'],
+                  suggestion['parentData'],
+                );
+              } else {
+                _showWargaInfo(context, suggestion['id'], suggestion['data']);
+              }
             }
           },
         );
@@ -279,11 +357,19 @@ class _UserHomePageState extends State<UserHomePage> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('warga').snapshots(),
         builder: (context, snapshot) {
-          Set<Marker> markers = {};
-          LatLng? selectedLatLng;
-          List<DocumentSnapshot> allWargaDocs = [];
-          if (snapshot.hasData) {
-            allWargaDocs = snapshot.data!.docs;
+          return StreamBuilder<QuerySnapshot>(
+            stream: FirestoreService.getAllAnggotaStream(),
+            builder: (context, anggotaSnapshot) {
+              Set<Marker> markers = {};
+              LatLng? selectedLatLng;
+              List<DocumentSnapshot> allWargaDocs = [];
+              List<DocumentSnapshot> allAnggotaDocs = [];
+              if (snapshot.hasData) {
+                allWargaDocs = snapshot.data!.docs;
+              }
+              if (anggotaSnapshot.hasData) {
+                allAnggotaDocs = anggotaSnapshot.data!.docs;
+              }
             for (var doc in allWargaDocs) {
               var data = doc.data() as Map<String, dynamic>;
               if (data['lokasi'] != null) {
@@ -305,8 +391,7 @@ class _UserHomePageState extends State<UserHomePage> {
                 );
               }
             }
-          }
-
+          
           Set<Circle> circles = {};
           if (selectedLatLng != null) {
             circles.add(
@@ -465,7 +550,7 @@ class _UserHomePageState extends State<UserHomePage> {
                                     constraints: const BoxConstraints(maxHeight: 250),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(16),
-                                      child: _buildSuggestionsList(context, allWargaDocs, false, isDark),
+                                       child: _buildSuggestionsList(context, allWargaDocs, allAnggotaDocs, false, isDark),
                                     ),
                                   ),
                                 ),
@@ -595,6 +680,8 @@ class _UserHomePageState extends State<UserHomePage> {
                 ),
               ),
             ],
+          );
+            },
           );
         },
       ),
@@ -1133,5 +1220,96 @@ class _UserHomePageState extends State<UserHomePage> {
         );
       },
     );
+  }
+
+  void _showAnggotaInfo(
+    BuildContext context,
+    String anggotaId,
+    Map<String, dynamic> anggotaData,
+    String parentDocId,
+    Map<String, dynamic> parentData,
+  ) {
+    setState(() => _selectedDocId = parentDocId);
+
+    final anggotaObj = AnggotaKeluarga(
+      id: anggotaId,
+      parentDocId: parentDocId,
+      nik: anggotaData['nik'] ?? '',
+      nama: anggotaData['nama'] ?? '',
+      noKk: anggotaData['no_kk'] ?? '',
+      jenisKelamin: anggotaData['jenis_kelamin'] ?? 'Pria',
+      hubungan: anggotaData['hubungan'] ?? 'Lainnya',
+    );
+
+    final controller = _scaffoldKey.currentState?.showBottomSheet(
+      (context) {
+        return AnggotaInfoSheet(
+          anggota: anggotaObj,
+          parentData: parentData,
+          isAdmin: false,
+          onRoutePressed: () async {
+            Navigator.pop(context);
+            if (parentData['lokasi'] != null) {
+              GeoPoint geo = parentData['lokasi'];
+              final mapProv = context.read<MapProvider>();
+              final success = await mapProv.drawRoute(
+                geo.latitude,
+                geo.longitude,
+              );
+              if (!success && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(mapProv.errorMessage ?? "Gagal memuat rute"),
+                  ),
+                );
+              }
+            }
+          },
+          onExternalMapPressed: () {
+            if (parentData['lokasi'] != null) {
+              GeoPoint geo = parentData['lokasi'];
+              _openExternalMap(geo.latitude, geo.longitude);
+            }
+          },
+          onViewParentPressed: () {
+            Navigator.pop(context);
+            _showWargaInfo(context, parentDocId, parentData);
+          },
+        );
+      },
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+    );
+
+    controller?.closed.then((_) {
+      if (mounted) {
+        setState(() => _selectedDocId = null);
+        _searchFocusNode.unfocus();
+        FocusScope.of(context).unfocus();
+      }
+    });
+  }
+
+  Future<void> _fetchAndShowAnggotaInfo(String parentDocId, String anggotaId) async {
+    try {
+      DocumentSnapshot parentDoc = await FirebaseFirestore.instance.collection('warga').doc(parentDocId).get();
+      DocumentSnapshot anggotaDoc = await FirebaseFirestore.instance
+          .collection('warga')
+          .doc(parentDocId)
+          .collection('anggota_keluarga')
+          .doc(anggotaId)
+          .get();
+
+      if (parentDoc.exists && anggotaDoc.exists && mounted) {
+        var parentData = parentDoc.data() as Map<String, dynamic>;
+        var anggotaData = anggotaDoc.data() as Map<String, dynamic>;
+        _showAnggotaInfo(context, anggotaId, anggotaData, parentDocId, parentData);
+      }
+    } catch (e) {
+      debugPrint("Error fetching anggota info: $e");
+    }
   }
 }
