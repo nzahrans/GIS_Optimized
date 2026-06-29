@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 // Import providers
 import 'providers/auth_provider.dart';
 import 'providers/warga_provider.dart';
@@ -20,11 +22,14 @@ import 'utils/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const SIGBansosApp());
+  final prefs = await SharedPreferences.getInstance();
+  final themeIndex = prefs.getInt('theme_mode');
+  runApp(SIGBansosApp(themeIndex: themeIndex));
 }
 
 class SIGBansosApp extends StatelessWidget {
-  const SIGBansosApp({super.key});
+  final int? themeIndex;
+  const SIGBansosApp({super.key, this.themeIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +38,7 @@ class SIGBansosApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => WargaProvider()),
         ChangeNotifierProvider(create: (_) => MapProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()), // Provider Tema
+        ChangeNotifierProvider(create: (_) => ThemeProvider(themeIndex)), // Provider Tema dengan initial index
       ],
       // Gunakan Consumer agar MaterialApp bisa "mendengarkan" perubahan dari ThemeProvider
       child: Consumer<ThemeProvider>(
