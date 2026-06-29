@@ -51,6 +51,7 @@ class _UserHomePageState extends State<UserHomePage> {
     _initMarkerIcons();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MapProvider>().loadRtBoundaries();
       if (widget.centerOnLocation != null) {
         context.read<MapProvider>().moveCamera(widget.centerOnLocation!, zoom: 19.0);
       }
@@ -428,6 +429,7 @@ class _UserHomePageState extends State<UserHomePage> {
                 markers: markers,
                 circles: circles,
                 polylines: mapProvider.polylines,
+                polygons: mapProvider.polygons,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
@@ -685,6 +687,77 @@ class _UserHomePageState extends State<UserHomePage> {
                   ],
                 ),
               ),
+              
+              // Info Wilayah RT yang dipilih
+              if (mapProvider.selectedRtName != null)
+                Positioned(
+                  bottom: 145, 
+                  left: 16,
+                  right: 16,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B).withOpacity(0.9) : Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.map,
+                              color: isDark ? Colors.blue[300] : const Color(0xFF1E3A8A),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    mapProvider.selectedRtName!,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: isDark ? Colors.white : Colors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    mapProvider.selectedRtKeterangan ?? '',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark ? Colors.white70 : Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 20),
+                              onPressed: () {
+                                mapProvider.clearSelectedRt();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           );
             },

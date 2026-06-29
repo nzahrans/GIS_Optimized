@@ -1,0 +1,30 @@
+{
+  "type": "FeatureCollection",
+  "name": "batas_rt",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "RT 02",
+        "keterangan": "Wilayah RT 02 Tegalsari (Batas Merah, Area Biru)",
+        "stroke_color": "#EF4444",
+        "fill_color": "#1E3A8A",
+        "fill_opacity": 0.15
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [107.9290, -6.8490],
+            [107.9305, -6.8488],
+            [107.9315, -6.8494],
+            [107.9310, -6.8505],
+            [107.9295, -6.8510],
+            [107.9285, -6.8502],
+            [107.9290, -6.8490]
+          ]
+        ]
+      }
+    }
+  ]
+}
