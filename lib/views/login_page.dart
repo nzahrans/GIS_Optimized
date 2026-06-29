@@ -124,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
                         width: 1.5,
                       ),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 76.0),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -181,7 +181,7 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 4),
                         // Kepanjangan Aplikasi
                         Text(
-                          "Sistem Informasi Geografis Bantuan Penduduk",
+                          "Sistem Informasi Geografis Bantuan Penduduk\n RT 02 RW 02 Tegalsari, Sumedang",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11,
@@ -189,21 +189,7 @@ class _LoginPageState extends State<LoginPage> {
                             letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        
-                        // Instruksi spesifik RT/RW
-                        Text(
-                          "Akses Khusus Warga & Pengurus RT 02 / RW 02\nTegalsari, Sumedang",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: textSubtitleColor,
-                            letterSpacing: 0.5,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        
+                        const SizedBox(height: 20),                        
                         // Form Email/NIK
                         TextField(
                           controller: _emailController,
