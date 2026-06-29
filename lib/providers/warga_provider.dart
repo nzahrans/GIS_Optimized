@@ -80,10 +80,17 @@ class WargaProvider extends ChangeNotifier {
           options: Firebase.app().options,
         );
         final FirebaseAuth tempAuth = FirebaseAuth.instanceFor(app: tempApp);
-        await tempAuth.createUserWithEmailAndPassword(
+        final UserCredential cred = await tempAuth.createUserWithEmailAndPassword(
           email: virtualEmail,
           password: virtualPassword,
         );
+        if (cred.user != null) {
+          await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
+            'email': virtualEmail,
+            'role': 'user',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
       } on FirebaseAuthException catch (authError) {
         if (authError.code != 'email-already-in-use') {
           rethrow;
@@ -154,10 +161,17 @@ class WargaProvider extends ChangeNotifier {
           options: Firebase.app().options,
         );
         final FirebaseAuth tempAuth = FirebaseAuth.instanceFor(app: tempApp);
-        await tempAuth.createUserWithEmailAndPassword(
+        final UserCredential cred = await tempAuth.createUserWithEmailAndPassword(
           email: virtualEmail,
           password: virtualPassword,
         );
+        if (cred.user != null) {
+          await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
+            'email': virtualEmail,
+            'role': 'user',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
       } on FirebaseAuthException catch (authError) {
         if (authError.code != 'email-already-in-use') {
           rethrow;

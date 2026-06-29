@@ -46,10 +46,10 @@ class _LoginPageState extends State<LoginPage> {
 
     if (mounted) {
       if (success) {
-        if (finalEmail.endsWith('@warga.sigbansos.com')) {
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-        } else {
+        if (authProvider.role == 'admin') {
           Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

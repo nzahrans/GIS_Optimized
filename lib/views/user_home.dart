@@ -316,7 +316,7 @@ class _UserHomePageState extends State<UserHomePage> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    final isLoggedInWarga = authProvider.isLoggedIn && (authProvider.user?.email ?? '').endsWith('@warga.sigbansos.com');
+    final isLoggedInWarga = authProvider.isLoggedIn && authProvider.role == 'user';
     
     // DETEKSI TEMA
     final isDark = Theme.of(context).brightness == Brightness.dark;

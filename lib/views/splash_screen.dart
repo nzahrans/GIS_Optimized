@@ -20,16 +20,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       duration: const Duration(seconds: 5),
     )..repeat();
 
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    Future.delayed(const Duration(milliseconds: 2500), () async {
       if (!mounted) return;
       
       final authProvider = context.read<AuthProvider>();
       if (authProvider.isLoggedIn) {
-        final email = authProvider.user?.email ?? '';
-        if (email.endsWith('@warga.sigbansos.com')) {
-          Navigator.pushReplacementNamed(context, '/home');
-        } else {
+        await authProvider.ensureRoleLoaded();
+        if (authProvider.role == 'admin') {
           Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
         }
       } else {
         // PERUBAHAN DI SINI: Jika belum login, langsung diarahkan ke peta warga
