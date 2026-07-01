@@ -32,6 +32,7 @@ class _FormWargaPageState extends State<FormWargaPage> {
   LatLng? _lokasiTerpilih;
   File? _fotoRumah;
   String? _existingFotoUrl; 
+  bool _catatSebagaiRiwayatBaru = false;
 
   bool get _isEditMode => widget.docId != null;
 
@@ -193,15 +194,20 @@ class _FormWargaPageState extends State<FormWargaPage> {
     if (newStatus == 'Sudah Menerima') {
       final oldStatus = widget.existingData != null ? (widget.existingData!['status_cair'] ?? 'Belum Menerima') : 'Belum Menerima';
       if (oldStatus == 'Sudah Menerima') {
-        if (widget.existingData != null && widget.existingData!['tanggal_diterima'] != null) {
-          final dynamic rawDate = widget.existingData!['tanggal_diterima'];
-          if (rawDate is Timestamp) {
-            tanggalDiterima = rawDate.toDate();
-          } else if (rawDate is DateTime) {
-            tanggalDiterima = rawDate;
+        if (_catatSebagaiRiwayatBaru) {
+          tanggalDiterima = DateTime.now();
+          shouldAddHistory = true;
+        } else {
+          if (widget.existingData != null && widget.existingData!['tanggal_diterima'] != null) {
+            final dynamic rawDate = widget.existingData!['tanggal_diterima'];
+            if (rawDate is Timestamp) {
+              tanggalDiterima = rawDate.toDate();
+            } else if (rawDate is DateTime) {
+              tanggalDiterima = rawDate;
+            }
           }
+          tanggalDiterima ??= DateTime.now();
         }
-        tanggalDiterima ??= DateTime.now();
       } else {
         tanggalDiterima = DateTime.now();
         shouldAddHistory = true;
@@ -501,6 +507,31 @@ class _FormWargaPageState extends State<FormWargaPage> {
                         activeColor: theme.colorScheme.primary,
                         onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
                       ),
+                      if (_isEditMode &&
+                          widget.existingData != null &&
+                          widget.existingData!['status_cair'] == 'Sudah Menerima' &&
+                          _statusPenerimaanSaatIni == 'Sudah Menerima') ...[
+                        const Divider(height: 16),
+                        CheckboxListTile(
+                          title: const Text(
+                            "Catat sebagai penyaluran bansos baru",
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: const Text(
+                            "Centang jika warga ini baru saja menerima bantuan sosial lagi. Tanggal penerimaan akan diperbarui ke hari ini.",
+                            style: TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                          value: _catatSebagaiRiwayatBaru,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: theme.colorScheme.primary,
+                          onChanged: (value) {
+                            setState(() {
+                              _catatSebagaiRiwayatBaru = value ?? false;
+                            });
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),

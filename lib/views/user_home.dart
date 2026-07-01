@@ -976,82 +976,78 @@ class _UserHomePageState extends State<UserHomePage> {
                           ),
                           const SizedBox(height: 8),
                           
-                          if (data['menerima_bantuan'] == 'Ya')
-                            StreamBuilder<QuerySnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('warga')
-                                  .doc(docId)
-                                  .collection('riwayat_bansos')
-                                  .orderBy('tanggal_diterima', descending: true)
-                                  .snapshots(),
-                              builder: (context, riwayatSnapshot) {
-                                if (riwayatSnapshot.connectionState == ConnectionState.waiting) {
+                          StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('warga')
+                                .doc(docId)
+                                .collection('riwayat_bansos')
+                                .orderBy('tanggal_diterima', descending: true)
+                                .snapshots(),
+                            builder: (context, riwayatSnapshot) {
+                              if (riwayatSnapshot.connectionState == ConnectionState.waiting) {
                                   return const Padding(
                                     padding: EdgeInsets.symmetric(vertical: 20),
                                     child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                                   );
-                                }
+                              }
 
-                                if (!riwayatSnapshot.hasData || riwayatSnapshot.data!.docs.isEmpty) {
-                                  return const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                              if (!riwayatSnapshot.hasData || riwayatSnapshot.data!.docs.isEmpty) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
                                     child: Text(
-                                      "Belum ada riwayat penerimaan bansos untuk akun ini.",
-                                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                                      data['menerima_bantuan'] == 'Ya'
+                                          ? "Belum ada riwayat penerimaan bansos untuk akun ini."
+                                          : "Tidak ada riwayat bantuan sosial untuk akun NIK ini.",
+                                      style: const TextStyle(color: Colors.grey, fontSize: 13),
                                     ),
                                   );
-                                }
+                              }
 
-                                return ListView.separated(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: riwayatSnapshot.data!.docs.length,
-                                  separatorBuilder: (context, index) => const Divider(height: 16),
-                                  itemBuilder: (context, index) {
-                                    final riwayatData = riwayatSnapshot.data!.docs[index].data() as Map<String, dynamic>;
-                                    final jenisBantuan = riwayatData['jenis_bantuan'] ?? '-';
-                                    final rawDate = riwayatData['tanggal_diterima'];
-                                    
-                                    String tanggalFormat = '-';
-                                    if (rawDate != null) {
-                                      if (rawDate is Timestamp) {
-                                        tanggalFormat = DateFormatter.formatIndonesianDate(rawDate.toDate());
-                                      } else if (rawDate is String) {
-                                        tanggalFormat = rawDate;
-                                      }
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: riwayatSnapshot.data!.docs.length,
+                                separatorBuilder: (context, index) => const Divider(height: 16),
+                                itemBuilder: (context, index) {
+                                  final riwayatData = riwayatSnapshot.data!.docs[index].data() as Map<String, dynamic>;
+                                  final jenisBantuan = riwayatData['jenis_bantuan'] ?? '-';
+                                  final rawDate = riwayatData['tanggal_diterima'];
+                                  
+                                  String tanggalFormat = '-';
+                                  if (rawDate != null) {
+                                    if (rawDate is Timestamp) {
+                                      tanggalFormat = DateFormatter.formatIndonesianDate(rawDate.toDate());
+                                    } else if (rawDate is String) {
+                                      tanggalFormat = rawDate;
                                     }
+                                  }
 
-                                    return ListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      leading: CircleAvatar(
-                                        backgroundColor: isDark ? Colors.green.withOpacity(0.2) : const Color(0xFFDCFCE7),
-                                        child: const Icon(Icons.check_circle, color: Colors.green),
-                                      ),
-                                      title: Text(
-                                        "Bantuan $jenisBantuan",
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                      ),
-                                      subtitle: Padding(
-                                        padding: const EdgeInsets.only(top: 4.0),
-                                        child: Text(
-                                          "Diterima pada: $tanggalFormat",
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: isDark ? Colors.green[400] : Colors.green[800],
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                  return ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: CircleAvatar(
+                                      backgroundColor: isDark ? Colors.green.withOpacity(0.2) : const Color(0xFFDCFCE7),
+                                      child: const Icon(Icons.check_circle, color: Colors.green),
+                                    ),
+                                    title: Text(
+                                      "Bantuan $jenisBantuan",
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                    subtitle: Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(
+                                        "Diterima pada: $tanggalFormat",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDark ? Colors.green[400] : Colors.green[800],
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                    );
-                                  },
-                                );
-                              },
-                            )
-                          else
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8.0),
-                              child: Text("Tidak ada riwayat bantuan sosial untuk akun NIK ini.", style: TextStyle(color: Colors.grey, fontSize: 13)),
-                            ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                           const SizedBox(height: 24),
                           Row(
                             children: [

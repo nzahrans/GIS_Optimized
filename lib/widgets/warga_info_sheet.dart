@@ -135,6 +135,141 @@ class WargaInfoSheet extends StatelessWidget {
                 ),
               ],
               if (isAdmin) ...[
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('warga')
+                      .doc(docId)
+                      .collection('riwayat_bansos')
+                      .orderBy('tanggal_diterima', descending: true)
+                      .snapshots(),
+                  builder: (context, riwayatSnapshot) {
+                    final hasHistory = riwayatSnapshot.hasData && riwayatSnapshot.data!.docs.isNotEmpty;
+                    final isPenerima = data['menerima_bantuan'] == 'Ya';
+
+                    if (!hasHistory && !isPenerima) {
+                      return const SizedBox.shrink();
+                    }
+
+                    if (riwayatSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final docs = riwayatSnapshot.data!.docs;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        Text(
+                          "RIWAYAT PENYALURAN BANSOS",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (!hasHistory)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E293B) : Colors.grey[50],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200]!,
+                              ),
+                            ),
+                            child: Text(
+                              "Belum ada riwayat penerimaan bansos",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark ? Colors.white60 : Colors.grey[600],
+                                fontStyle: FontStyle.italic,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        else
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: docs.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final riwayatData = docs[index].data() as Map<String, dynamic>;
+                              final jenisBantuan = riwayatData['jenis_bantuan'] ?? '-';
+                              final rawDate = riwayatData['tanggal_diterima'];
+
+                              String tanggalFormat = '-';
+                              if (rawDate != null) {
+                                if (rawDate is Timestamp) {
+                                  tanggalFormat = DateFormatter.formatIndonesianDate(rawDate.toDate());
+                                } else if (rawDate is String) {
+                                  tanggalFormat = rawDate;
+                                }
+                              }
+
+                              return Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200]!,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 14,
+                                      backgroundColor: isDark ? Colors.green.withOpacity(0.2) : const Color(0xFFDCFCE7),
+                                      child: const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Bantuan $jenisBantuan",
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: textColor,
+                                            ),
+                                          ),
+                                          Text(
+                                            "Diterima pada: $tanggalFormat",
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+              if (isAdmin) ...[
                 // --- ANGGOTA KELUARGA SECTION ---
                 const SizedBox(height: 12),
                 Row(
