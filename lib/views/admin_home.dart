@@ -48,12 +48,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
   BitmapDescriptor? _greenDotIcon;
   BitmapDescriptor? _redDotIcon;
   BitmapDescriptor? _purpleDotIcon;
+  double? _lastDevicePixelRatio;
 
   @override
   void initState() {
     super.initState();
     _selectedDocId = widget.highlightDocId;
-    _initMarkerIcons();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MapProvider>().loadRtBoundaries();
@@ -73,33 +73,44 @@ class _AdminHomePageState extends State<AdminHomePage> {
     });
   }
 
-  Future<void> _initMarkerIcons() async {
-    _blueDotIcon = await _createDotIcon(const Color(0xFF1E3A8A), 18);
-    _greenDotIcon = await _createDotIcon(Colors.green, 18);
-    _redDotIcon = await _createDotIcon(Colors.red, 18);
-    _purpleDotIcon = await _createDotIcon(Colors.purple, 22);
-    if (mounted) setState(() {});
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    if (_lastDevicePixelRatio != dpr) {
+      _lastDevicePixelRatio = dpr;
+      _initMarkerIcons(dpr);
+    }
   }
 
-  Future<BitmapDescriptor> _createDotIcon(Color color, double radius) async {
+  Future<void> _initMarkerIcons(double dpr) async {
+    _blueDotIcon = await _createDotIcon(const Color(0xFF1E3A8A), 7, dpr);
+    _greenDotIcon = await _createDotIcon(Colors.green, 7, dpr);
+    _redDotIcon = await _createDotIcon(Colors.red, 7, dpr);
+    _purpleDotIcon = await _createDotIcon(Colors.purple, 10, dpr);
+    if (mounted) setState(() {});
+  }
+ 
+  Future<BitmapDescriptor> _createDotIcon(Color color, double logicalRadius, double dpr) async {
+    final double radius = logicalRadius * dpr;
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
-
+ 
     final Paint shadowPaint = Paint()
       ..color = Colors.black.withOpacity(0.25)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.0 * dpr);
+ 
     final Paint paint = Paint()..color = color;
     final Paint strokePaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5;
-
-    canvas.drawCircle(Offset(radius + 4, radius + 5), radius, shadowPaint);
-    canvas.drawCircle(Offset(radius + 4, radius + 4), radius, paint);
-    canvas.drawCircle(Offset(radius + 4, radius + 4), radius, strokePaint);
-
-    final int size = (radius * 2 + 8).toInt();
+      ..strokeWidth = 2.0 * dpr;
+ 
+    canvas.drawCircle(Offset(radius + 2.0 * dpr, radius + 3.0 * dpr), radius, shadowPaint);
+    canvas.drawCircle(Offset(radius + 2.0 * dpr, radius + 2.0 * dpr), radius, paint);
+    canvas.drawCircle(Offset(radius + 2.0 * dpr, radius + 2.0 * dpr), radius, strokePaint);
+ 
+    final int size = (radius * 2 + 4.0 * dpr).toInt();
     final ui.Image image = await pictureRecorder.endRecording().toImage(
       size,
       size,
@@ -123,7 +134,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       final controller = context.read<MapProvider>().mapController; 
       
       // Titik pusat awal (hardcode bawaan aplikasimu)
-      const LatLng titikPusat = LatLng(-6.850071, 107.930230); 
+      const LatLng titikPusat = LatLng(-6.849041, 107.929190); 
 
       if (controller != null) {
         await controller.animateCamera(
@@ -814,7 +825,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 initialCameraPosition: CameraPosition(
                   target:
                       widget.centerOnLocation ??
-                      const LatLng(-6.850071, 107.930230),
+                      const LatLng(-6.849041, 107.929190),
                   zoom: 18.0,
                 ),
                 onMapCreated: (controller) {
@@ -839,9 +850,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
               // Header Admin (Search & Logout) & Dashboard
               SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: Column(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1070,6 +1085,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                 ),
               ),
+            ),
+          ),
 
 
               if (mapProvider.isLoadingRoute)
@@ -1316,7 +1333,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           },
         );
       },
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -1437,7 +1454,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           },
         );
       },
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

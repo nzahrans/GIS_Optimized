@@ -15,7 +15,7 @@ class PickMapPage extends StatefulWidget {
 
 class _PickMapPageState extends State<PickMapPage> {
   // Koordinat tengah peta saat ini (Default: Tegalsari)
-  LatLng _currentCenter = const LatLng(-6.850071, 107.930230);
+  LatLng _currentCenter = const LatLng(-6.849041, 107.929190);
 
   @override
   void initState() {

@@ -112,7 +112,7 @@ def main():
             'nik': str(kk_data['NIK']).strip(),
             'no_kk': str(kk_data['NO_KK']).strip(),
             'blok': '',
-            'lokasi': firestore.GeoPoint(-6.850071, 107.930230),  # Koordinat default
+            'lokasi': firestore.GeoPoint(-6.849041, 107.929190),  # Koordinat default
             'menerima_bantuan': 'Tidak',
             'jenis_bantuan': '-',
             'status_cair': 'Belum Menerima',
