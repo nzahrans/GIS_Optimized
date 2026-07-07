@@ -43,12 +43,12 @@ class _UserHomePageState extends State<UserHomePage> {
 
   BitmapDescriptor? _blueDotIcon;
   BitmapDescriptor? _redDotIcon;
+  double? _lastDevicePixelRatio;
 
   @override
   void initState() {
     super.initState();
     _selectedDocId = widget.highlightDocId;
-    _initMarkerIcons();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MapProvider>().loadRtBoundaries();
@@ -65,31 +65,32 @@ class _UserHomePageState extends State<UserHomePage> {
     });
   }
 
-  Future<void> _initMarkerIcons() async {
-    _blueDotIcon = await _createDotIcon(const Color(0xFF1E3A8A), 18);
-    _redDotIcon = await _createDotIcon(Colors.red, 22);
+  Future<void> _initMarkerIcons(double dpr) async {
+    _blueDotIcon = await _createDotIcon(const Color(0xFF1E3A8A), 7, dpr);
+    _redDotIcon = await _createDotIcon(Colors.red, 10, dpr);
     if (mounted) setState(() {});
   }
 
-  Future<BitmapDescriptor> _createDotIcon(Color color, double radius) async {
+  Future<BitmapDescriptor> _createDotIcon(Color color, double logicalRadius, double dpr) async {
+    final double radius = logicalRadius * dpr;
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
 
     final Paint shadowPaint = Paint()
       ..color = Colors.black.withOpacity(0.25)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.0 * dpr);
 
     final Paint paint = Paint()..color = color;
     final Paint strokePaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5;
+      ..strokeWidth = 2.0 * dpr;
 
-    canvas.drawCircle(Offset(radius + 4, radius + 5), radius, shadowPaint);
-    canvas.drawCircle(Offset(radius + 4, radius + 4), radius, paint);
-    canvas.drawCircle(Offset(radius + 4, radius + 4), radius, strokePaint);
+    canvas.drawCircle(Offset(radius + 2.0 * dpr, radius + 3.0 * dpr), radius, shadowPaint);
+    canvas.drawCircle(Offset(radius + 2.0 * dpr, radius + 2.0 * dpr), radius, paint);
+    canvas.drawCircle(Offset(radius + 2.0 * dpr, radius + 2.0 * dpr), radius, strokePaint);
 
-    final int size = (radius * 2 + 8).toInt();
+    final int size = (radius * 2 + 4.0 * dpr).toInt();
     final ui.Image image = await pictureRecorder.endRecording().toImage(size, size);
     final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
@@ -104,6 +105,12 @@ class _UserHomePageState extends State<UserHomePage> {
       _searchController.clear();
     }
     _wasLoggedIn = isLoggedIn;
+
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    if (_lastDevicePixelRatio != dpr) {
+      _lastDevicePixelRatio = dpr;
+      _initMarkerIcons(dpr);
+    }
   }
 
   @override
@@ -119,7 +126,7 @@ class _UserHomePageState extends State<UserHomePage> {
       final controller = context.read<MapProvider>().mapController; 
       
       // Titik pusat awal (hardcode bawaan aplikasimu)
-      const LatLng titikPusat = LatLng(-6.850071, 107.930230); 
+      const LatLng titikPusat = LatLng(-6.849041, 107.929190); 
 
       if (controller != null) {
         await controller.animateCamera(
@@ -414,7 +421,7 @@ class _UserHomePageState extends State<UserHomePage> {
               GoogleMap(
                 mapType: mapProvider.currentMapType,
                 initialCameraPosition: CameraPosition(
-                  target: widget.centerOnLocation ?? const LatLng(-6.850071, 107.930230),
+                  target: widget.centerOnLocation ?? const LatLng(-6.849041, 107.929190),
                   zoom: 18.0,
                 ),
                 onMapCreated: (GoogleMapController controller) {
@@ -438,9 +445,13 @@ class _UserHomePageState extends State<UserHomePage> {
               ),
               // Search bar dan Login button
               SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: Row(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
@@ -614,6 +625,8 @@ class _UserHomePageState extends State<UserHomePage> {
                   ),
                 ),
               ),
+            ),
+          ),
 
 
               // Indikator Loading Rute

@@ -36,7 +36,11 @@ class AnggotaInfoSheet extends StatelessWidget {
       snap: true,
       snapSizes: [0.15, maxSheetSize],
       builder: (BuildContext context, ScrollController scrollController) {
-        return Container(
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
             color: theme.scaffoldBackgroundColor,
@@ -243,6 +247,8 @@ class AnggotaInfoSheet extends StatelessWidget {
               ),
               const SizedBox(height: 8),
             ],
+          ),
+            ),
           ),
         );
       },

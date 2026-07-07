@@ -115,8 +115,11 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
           ),
         ),
       ),
-      body: FutureBuilder<List<QuerySnapshot>>(
-        future: _searchFuture,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: FutureBuilder<List<QuerySnapshot>>(
+            future: _searchFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -490,7 +493,9 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
           );
         },
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _statusBadge(String status) {

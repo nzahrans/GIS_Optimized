@@ -265,8 +265,11 @@ class _FormWargaPageState extends State<FormWargaPage> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 650),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionTitle("1. INFORMASI KEPALA KELUARGA", isDark),
             const SizedBox(height: 16),
@@ -587,7 +590,9 @@ class _FormWargaPageState extends State<FormWargaPage> {
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildSectionTitle(String title, bool isDark) {

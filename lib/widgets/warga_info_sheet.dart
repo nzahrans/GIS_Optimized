@@ -42,7 +42,11 @@ class WargaInfoSheet extends StatelessWidget {
       snap: true,            // Mengaktifkan efek magnet/step
       snapSizes: [0.15, maxSheetSize], // Titik henti drag
       builder: (BuildContext context, ScrollController scrollController) {
-        return Container(
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
             color: theme.scaffoldBackgroundColor, // Menyesuaikan tema
@@ -578,6 +582,8 @@ class WargaInfoSheet extends StatelessWidget {
               ),
               const SizedBox(height: 8), //[cite: 1]
             ],
+          ),
+            ),
           ),
         );
       },

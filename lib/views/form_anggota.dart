@@ -133,9 +133,12 @@ class _FormAnggotaPageState extends State<FormAnggotaPage> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        child: Form(
-          key: _formKey,
-          child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 650),
+            child: Form(
+              key: _formKey,
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSectionTitle("INFORMASI ANGGOTA KELUARGA", isDark),
@@ -274,7 +277,9 @@ class _FormAnggotaPageState extends State<FormAnggotaPage> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildSectionTitle(String title, bool isDark) {
