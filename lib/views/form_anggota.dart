@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/anggota_keluarga.dart';
 import '../providers/warga_provider.dart';
 import '../services/firestore_service.dart';
+import '../widgets/custom_alert_dialog.dart';
 
 class FormAnggotaPage extends StatefulWidget {
   final String wargaDocId;
@@ -100,13 +101,18 @@ class _FormAnggotaPageState extends State<FormAnggotaPage> {
     }
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isEditMode ? "Data anggota berhasil diperbarui" : "Anggota keluarga berhasil ditambahkan"),
-          backgroundColor: Colors.green,
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogCtx) => CustomSuccessDialog(
+          title: "Berhasil!",
+          message: _isEditMode ? "Data anggota keluarga berhasil diperbarui." : "Anggota keluarga baru berhasil ditambahkan.",
+          buttonText: "Tutup",
         ),
       );
-      Navigator.pop(context, true);
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
