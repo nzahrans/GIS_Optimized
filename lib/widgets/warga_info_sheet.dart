@@ -6,6 +6,7 @@ import '../providers/warga_provider.dart';
 import '../services/firestore_service.dart';
 import '../views/form_anggota.dart';
 import '../utils/date_formatter.dart';
+import 'custom_alert_dialog.dart';
 
 class WargaInfoSheet extends StatelessWidget {
   final String docId;
@@ -634,12 +635,23 @@ class WargaInfoSheet extends StatelessWidget {
               final provider = context.read<WargaProvider>();
               final success = await provider.deleteAnggota(wargaDocId, anggota.id);
               if (dialogCtx.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success ? "Anggota terhapus" : (provider.errorMessage ?? "Gagal menghapus")),
-                    backgroundColor: success ? Colors.green : Colors.red,
-                  ),
-                );
+                if (success) {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => const CustomSuccessDialog(
+                      title: "Terhapus!",
+                      message: "Anggota keluarga berhasil dihapus.",
+                      buttonText: "Tutup",
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(provider.errorMessage ?? "Gagal menghapus"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             child: const Text("Hapus", style: TextStyle(color: Colors.white)),

@@ -795,14 +795,15 @@ class _UserHomePageState extends State<UserHomePage> {
   void _showWargaInfo(BuildContext context, String docId, Map<String, dynamic> data) {
     setState(() => _selectedDocId = docId);
 
-    final controller = _scaffoldKey.currentState?.showBottomSheet(
+    PersistentBottomSheetController? controller;
+    controller = _scaffoldKey.currentState?.showBottomSheet(
       (context) {
         return WargaInfoSheet(
           docId: docId,
           data: data,
           isAdmin: false,
           onRoutePressed: () async {
-            Navigator.pop(context); // Tutup bottom sheet
+            controller?.close(); // Tutup bottom sheet
             if (data['lokasi'] != null) {
               GeoPoint geo = data['lokasi'];
               final mapProv = context.read<MapProvider>();
@@ -1334,14 +1335,15 @@ class _UserHomePageState extends State<UserHomePage> {
       hubungan: anggotaData['hubungan'] ?? 'Lainnya',
     );
 
-    final controller = _scaffoldKey.currentState?.showBottomSheet(
+    PersistentBottomSheetController? controller;
+    controller = _scaffoldKey.currentState?.showBottomSheet(
       (context) {
         return AnggotaInfoSheet(
           anggota: anggotaObj,
           parentData: parentData,
           isAdmin: false,
           onRoutePressed: () async {
-            Navigator.pop(context);
+            controller?.close();
             if (parentData['lokasi'] != null) {
               GeoPoint geo = parentData['lokasi'];
               final mapProv = context.read<MapProvider>();
@@ -1365,7 +1367,7 @@ class _UserHomePageState extends State<UserHomePage> {
             }
           },
           onViewParentPressed: () {
-            Navigator.pop(context);
+            controller?.close();
             _showWargaInfo(context, parentDocId, parentData);
           },
         );

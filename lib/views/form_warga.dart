@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'pick_map.dart';
 import '../models/warga.dart';
 import '../providers/warga_provider.dart';
+import '../widgets/custom_alert_dialog.dart';
 
 class FormWargaPage extends StatefulWidget {
   final String? docId;
@@ -116,31 +117,73 @@ class _FormWargaPageState extends State<FormWargaPage> {
   }
 
   void _showImageSourceOptions() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: Colors.blue),
-                title: const Text('Ambil Foto (Kamera)'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _ambilFoto(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library, color: Colors.green),
-                title: const Text('Pilih dari Galeri'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _ambilFoto(ImageSource.gallery);
-                },
-              ),
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 10,
+                spreadRadius: 1,
+              )
             ],
+          ),
+          child: SafeArea(
+            child: Wrap(
+              children: [
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    height: 5,
+                    width: 48,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[700] : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt, color: Colors.blue),
+                  title: Text(
+                    'Ambil Foto (Kamera)',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _ambilFoto(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library, color: Colors.green),
+                  title: Text(
+                    'Pilih dari Galeri',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _ambilFoto(ImageSource.gallery);
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
           ),
         );
       },
@@ -240,8 +283,18 @@ class _FormWargaPageState extends State<FormWargaPage> {
     if (mounted) {
       if (success) {
         final msg = _isEditMode ? "Data berhasil diperbarui!" : "Alhamdulillah! Data Berhasil Disimpan.";
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-        Navigator.pop(context);
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogCtx) => CustomSuccessDialog(
+            title: "Berhasil!",
+            message: msg,
+            buttonText: "Selesai",
+          ),
+        );
+        if (mounted) {
+          Navigator.pop(context);
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(wargaProvider.errorMessage ?? "Gagal menyimpan data")));
       }
@@ -299,7 +352,11 @@ class _FormWargaPageState extends State<FormWargaPage> {
               onTap: () async {
                 final LatLng? result = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => PickMapPage(initialCenter: _lokasiTerpilih)),
+                  MaterialPageRoute(
+                      builder: (context) => PickMapPage(
+                            initialCenter: _lokasiTerpilih,
+                            docId: widget.docId,
+                          )),
                 );
                 if (result != null) {
                   setState(() {
@@ -394,7 +451,7 @@ class _FormWargaPageState extends State<FormWargaPage> {
                   color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _fotoRumah != null
+                    color: (_fotoRumah != null || (_existingFotoUrl != null && _existingFotoUrl!.isNotEmpty))
                         ? theme.colorScheme.secondary
                         : (isDark ? const Color(0xFF334155) : Colors.grey[300]!),
                     width: 1.5,
@@ -404,9 +461,11 @@ class _FormWargaPageState extends State<FormWargaPage> {
                   ],
                   image: _fotoRumah != null
                       ? DecorationImage(image: FileImage(_fotoRumah!), fit: BoxFit.cover)
-                      : null,
+                      : (_existingFotoUrl != null && _existingFotoUrl!.isNotEmpty)
+                          ? DecorationImage(image: NetworkImage(_existingFotoUrl!), fit: BoxFit.cover)
+                          : null,
                 ),
-                child: _fotoRumah == null
+                child: (_fotoRumah == null && (_existingFotoUrl == null || _existingFotoUrl!.isEmpty))
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -428,11 +487,11 @@ class _FormWargaPageState extends State<FormWargaPage> {
                     : null,
               ),
             ),
-            if (_fotoRumah != null)
+            if (_fotoRumah != null || (_existingFotoUrl != null && _existingFotoUrl!.isNotEmpty))
               Center(
                 child: TextButton.icon(
                   icon: const Icon(Icons.refresh),
-                  label: const Text("Ganti Foto Rumah"),
+                  label: Text(_fotoRumah != null ? "Ganti Foto Rumah" : "Ganti Foto Rumah Terdaftar"),
                   onPressed: _showImageSourceOptions,
                 ),
               ),

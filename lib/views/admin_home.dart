@@ -14,6 +14,7 @@ import '../providers/warga_provider.dart';
 import '../providers/theme_provider.dart'; // Import ThemeProvider
 import '../widgets/warga_info_sheet.dart';
 import '../widgets/anggota_info_sheet.dart';
+import '../widgets/custom_alert_dialog.dart';
 import '../models/anggota_keluarga.dart';
 import '../services/firestore_service.dart';
 import 'form_anggota.dart';
@@ -38,7 +39,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   String? _selectedDocId;
   PersistentBottomSheetController? _activeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _isDashboardExpanded = false;
+  bool _isDashboardExpanded = true;
   String? _activeFilter;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -1288,14 +1289,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
   ) {
     setState(() => _selectedDocId = docId);
 
-    final controller = _scaffoldKey.currentState?.showBottomSheet(
+    PersistentBottomSheetController? controller;
+    controller = _scaffoldKey.currentState?.showBottomSheet(
       (context) {
         return WargaInfoSheet(
           docId: docId,
           data: data,
           isAdmin: true,
           onRoutePressed: () async {
-            Navigator.pop(context); 
+            controller?.close(); 
             if (data['lokasi'] != null) {
               GeoPoint geo = data['lokasi'];
               final mapProv = context.read<MapProvider>();
@@ -1319,7 +1321,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             }
           },
           onEditPressed: () {
-            Navigator.pop(context); 
+            controller?.close(); 
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -1378,8 +1380,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
               if (mounted) {
                 if (success) {
                   setState(() => _selectedDocId = null);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Data Terhapus")),
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => const CustomSuccessDialog(
+                      title: "Terhapus!",
+                      message: "Data warga berhasil dihapus secara permanen.",
+                      buttonText: "Tutup",
+                    ),
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1418,14 +1425,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
       hubungan: anggotaData['hubungan'] ?? 'Lainnya',
     );
 
-    final controller = _scaffoldKey.currentState?.showBottomSheet(
+    PersistentBottomSheetController? controller;
+    controller = _scaffoldKey.currentState?.showBottomSheet(
       (context) {
         return AnggotaInfoSheet(
           anggota: anggotaObj,
           parentData: parentData,
           isAdmin: true,
           onRoutePressed: () async {
-            Navigator.pop(context);
+            controller?.close();
             if (parentData['lokasi'] != null) {
               GeoPoint geo = parentData['lokasi'];
               final mapProv = context.read<MapProvider>();
@@ -1449,7 +1457,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             }
           },
           onViewParentPressed: () {
-            Navigator.pop(context);
+            controller?.close();
             _showAdminWargaInfo(context, parentDocId, parentData);
           },
         );
