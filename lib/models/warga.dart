@@ -9,10 +9,7 @@ class Warga {
   final String blok;
   final LatLng koordinat;
   final String menerimaBantuan; // "Ya" atau "Tidak"
-  final String jenisBantuan;
-  final String statusBansos; // "Sudah Menerima" atau "Belum Menerima"
   final String fotoUrl;
-  final DateTime? tanggalDiterima;
 
   Warga({
     required this.id,
@@ -22,10 +19,7 @@ class Warga {
     this.blok = '',
     required this.koordinat,
     this.menerimaBantuan = 'Tidak',
-    this.jenisBantuan = '-',
-    this.statusBansos = 'Belum Menerima',
     this.fotoUrl = '',
-    this.tanggalDiterima,
   });
 
   /// Buat Warga dari dokumen Firestore.
@@ -40,12 +34,7 @@ class Warga {
       blok: data['blok'] ?? '',
       koordinat: LatLng(geoPoint.latitude, geoPoint.longitude),
       menerimaBantuan: data['menerima_bantuan'] ?? 'Tidak',
-      jenisBantuan: data['jenis_bantuan'] ?? '-',
-      statusBansos: data['status_cair'] ?? 'Belum Menerima',
       fotoUrl: data['foto_url'] ?? '',
-      tanggalDiterima: data['tanggal_diterima'] != null
-          ? (data['tanggal_diterima'] as Timestamp).toDate()
-          : null,
     );
   }
 
@@ -58,12 +47,7 @@ class Warga {
       'blok': blok,
       'lokasi': GeoPoint(koordinat.latitude, koordinat.longitude),
       'menerima_bantuan': menerimaBantuan,
-      'jenis_bantuan': jenisBantuan,
-      'status_cair': statusBansos,
       'foto_url': fotoUrl,
-      'tanggal_diterima': tanggalDiterima != null
-          ? Timestamp.fromDate(tanggalDiterima!)
-          : null,
     };
   }
 
@@ -76,10 +60,7 @@ class Warga {
     String? blok,
     LatLng? koordinat,
     String? menerimaBantuan,
-    String? jenisBantuan,
-    String? statusBansos,
     String? fotoUrl,
-    DateTime? tanggalDiterima,
   }) {
     return Warga(
       id: id ?? this.id,
@@ -89,10 +70,7 @@ class Warga {
       blok: blok ?? this.blok,
       koordinat: koordinat ?? this.koordinat,
       menerimaBantuan: menerimaBantuan ?? this.menerimaBantuan,
-      jenisBantuan: jenisBantuan ?? this.jenisBantuan,
-      statusBansos: statusBansos ?? this.statusBansos,
       fotoUrl: fotoUrl ?? this.fotoUrl,
-      tanggalDiterima: tanggalDiterima ?? this.tanggalDiterima,
     );
   }
 }

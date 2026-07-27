@@ -63,7 +63,7 @@ class WargaProvider extends ChangeNotifier {
   }
 
   /// Tambah data warga baru dan buat akun Firebase Auth secara otomatis
-  Future<bool> addWarga(Warga warga, File? fotoFile) async {
+  Future<bool> addWarga(Warga warga, File? fotoFile, {List<Map<String, dynamic>>? initialBantuan}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -118,13 +118,23 @@ class WargaProvider extends ChangeNotifier {
 
       final String docId = await FirestoreService.addWarga(data);
 
-      // Jika statusnya langsung "Sudah Menerima", catat ke riwayat_bansos subcollection
-      if (warga.statusBansos == 'Sudah Menerima') {
-        await FirestoreService.addRiwayatBansos(docId, {
-          'jenis_bantuan': warga.jenisBantuan,
-          'status_cair': warga.statusBansos,
-          'tanggal_diterima': FieldValue.serverTimestamp(),
-        });
+      // Simpan initialBantuan jika ada
+      if (initialBantuan != null) {
+        for (var b in initialBantuan) {
+          b['created_at'] = FieldValue.serverTimestamp();
+          await FirestoreService.addBantuanAktif(docId, b);
+          
+          if (b['status_cair'] == 'Sudah Menerima') {
+            await FirestoreService.addRiwayatBansos(docId, {
+              'jenis_bantuan': b['jenis_bantuan'],
+              'status_cair': b['status_cair'],
+              'tanggal_diterima': FieldValue.serverTimestamp(),
+              'dikonfirmasi_warga': false,
+              'tanggal_konfirmasi': null,
+              'diubah_oleh': 'admin',
+            });
+          }
+        }
       }
       
       _isLoading = false;
@@ -142,9 +152,8 @@ class WargaProvider extends ChangeNotifier {
   Future<bool> updateWarga(
     String docId,
     Warga warga,
-    File? fotoFile, {
-    bool shouldAddHistory = false,
-  }) async {
+    File? fotoFile,
+  ) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -195,14 +204,6 @@ class WargaProvider extends ChangeNotifier {
 
       final data = warga.copyWith(fotoUrl: fotoUrl).toMap();
       await FirestoreService.updateWarga(docId, data);
-
-      if (shouldAddHistory) {
-        await FirestoreService.addRiwayatBansos(docId, {
-          'jenis_bantuan': warga.jenisBantuan,
-          'status_cair': warga.statusBansos,
-          'tanggal_diterima': FieldValue.serverTimestamp(),
-        });
-      }
       
       _isLoading = false;
       notifyListeners();
@@ -215,7 +216,7 @@ class WargaProvider extends ChangeNotifier {
     }
   }
 
-  /// Hapus data warga beserta semua anggota keluarganya
+  /// Hapus data warga beserta semua anggota keluarganya dan bantuan aktifnya
   Future<bool> deleteWarga(String docId) async {
     _isLoading = true;
     _errorMessage = null;
@@ -228,7 +229,13 @@ class WargaProvider extends ChangeNotifier {
         await FirestoreService.deleteAnggota(docId, doc.id);
       }
 
-      // 2. Hapus dokumen warga utama
+      // 2. Ambil semua bantuan aktif dan hapus
+      final bantuanSnapshot = await FirestoreService.getBantuanAktifOnce(docId);
+      for (var doc in bantuanSnapshot.docs) {
+        await FirestoreService.deleteBantuanAktif(docId, doc.id);
+      }
+
+      // 3. Hapus dokumen warga utama
       await FirestoreService.deleteWarga(docId);
       _isLoading = false;
       notifyListeners();
@@ -239,6 +246,189 @@ class WargaProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  // === OPERATIONS BANTUAN AKTIF ===
+
+  /// Sinkronisasi status bantuan warga ke dokumen utama
+  Future<void> _syncWargaBantuanStatus(String wargaDocId) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('warga')
+          .doc(wargaDocId)
+          .collection('bantuan_aktif')
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        await FirebaseFirestore.instance.collection('warga').doc(wargaDocId).update({
+          'menerima_bantuan': 'Tidak',
+          'status_cair': 'Belum Menerima',
+        });
+        return;
+      }
+
+      final docs = snapshot.docs;
+      final statuses = docs.map((doc) => doc.data()['status_cair'] as String? ?? 'Belum Menerima').toList();
+
+      String aggregateStatus = 'Belum Menerima';
+      if (statuses.contains('Sudah Menerima')) {
+        // Ada yang sudah cair tapi belum dikonfirmasi warga
+        aggregateStatus = 'Sudah Menerima';
+      } else if (statuses.contains('Dikonfirmasi Warga')) {
+        // Ada yang sudah dikonfirmasi warga, dan tidak ada yang hanya "Sudah Menerima" (semua yang cair sudah dikonfirmasi)
+        aggregateStatus = 'Dikonfirmasi Warga';
+      } else {
+        // Semua "Belum Menerima"
+        aggregateStatus = 'Belum Menerima';
+      }
+
+      await FirebaseFirestore.instance.collection('warga').doc(wargaDocId).update({
+        'menerima_bantuan': 'Ya',
+        'status_cair': aggregateStatus,
+      });
+    } catch (e) {
+      debugPrint('Error syncing warga bantuan status: $e');
+    }
+  }
+
+  /// Tambah bantuan aktif untuk warga
+  Future<bool> addBantuan(String wargaDocId, String jenisBantuan, String statusCair) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final data = {
+        'jenis_bantuan': jenisBantuan,
+        'status_cair': statusCair,
+        'tanggal_pencairan': statusCair == 'Sudah Menerima' ? FieldValue.serverTimestamp() : null,
+        'dikonfirmasi_warga': false,
+        'tanggal_konfirmasi': null,
+        'catatan_warga': null,
+        'created_at': FieldValue.serverTimestamp(),
+      };
+      await FirestoreService.addBantuanAktif(wargaDocId, data);
+
+      if (statusCair == 'Sudah Menerima') {
+        await FirestoreService.addRiwayatBansos(wargaDocId, {
+          'jenis_bantuan': jenisBantuan,
+          'status_cair': statusCair,
+          'tanggal_diterima': FieldValue.serverTimestamp(),
+          'dikonfirmasi_warga': false,
+          'tanggal_konfirmasi': null,
+          'diubah_oleh': 'admin',
+        });
+      }
+
+      // Sinkronisasi status gabungan ke dokumen warga utama
+      await _syncWargaBantuanStatus(wargaDocId);
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Gagal menambahkan bantuan: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Update status bantuan aktif (Cairkan oleh admin, atau update lainnya)
+  Future<bool> updateBantuanStatus(
+    String wargaDocId,
+    String bantuanDocId,
+    String statusCair, {
+    bool dikonfirmasi = false,
+    String? catatanWarga,
+    String diubahOleh = 'admin',
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final updates = <String, dynamic>{
+        'status_cair': statusCair,
+      };
+
+      if (statusCair == 'Sudah Menerima') {
+        updates['tanggal_pencairan'] = FieldValue.serverTimestamp();
+      } else if (statusCair == 'Dikonfirmasi Warga') {
+        updates['dikonfirmasi_warga'] = true;
+        updates['tanggal_konfirmasi'] = FieldValue.serverTimestamp();
+        updates['catatan_warga'] = catatanWarga;
+      }
+
+      await FirestoreService.updateBantuanAktif(wargaDocId, bantuanDocId, updates);
+
+      // Ambil detail bantuan aktif untuk riwayat
+      final docBantuan = await FirebaseFirestore.instance
+          .collection('warga')
+          .doc(wargaDocId)
+          .collection('bantuan_aktif')
+          .doc(bantuanDocId)
+          .get();
+      
+      final String jenisBantuan = docBantuan.data()?['jenis_bantuan'] ?? 'Bansos';
+
+      // Catat ke riwayat
+      await FirestoreService.addRiwayatBansos(wargaDocId, {
+        'jenis_bantuan': jenisBantuan,
+        'status_cair': statusCair,
+        'tanggal_diterima': FieldValue.serverTimestamp(),
+        'dikonfirmasi_warga': statusCair == 'Dikonfirmasi Warga' || dikonfirmasi,
+        'tanggal_konfirmasi': statusCair == 'Dikonfirmasi Warga' ? FieldValue.serverTimestamp() : null,
+        'diubah_oleh': diubahOleh,
+      });
+
+      // Sinkronisasi status gabungan ke dokumen warga utama
+      await _syncWargaBantuanStatus(wargaDocId);
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Gagal mengupdate status bantuan: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Hapus bantuan aktif
+  Future<bool> deleteBantuan(String wargaDocId, String bantuanDocId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await FirestoreService.deleteBantuanAktif(wargaDocId, bantuanDocId);
+
+      // Sinkronisasi status gabungan ke dokumen warga utama
+      await _syncWargaBantuanStatus(wargaDocId);
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Gagal menghapus bantuan: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Konfirmasi bantuan oleh warga sendiri
+  Future<bool> konfirmasiBantuan(String wargaDocId, String bantuanDocId, String? catatan) async {
+    return await updateBantuanStatus(
+      wargaDocId,
+      bantuanDocId,
+      'Dikonfirmasi Warga',
+      dikonfirmasi: true,
+      catatanWarga: catatan,
+      diubahOleh: 'warga',
+    );
   }
 
   /// Tambah data anggota keluarga

@@ -135,4 +135,61 @@ class FirestoreService {
   static Stream<QuerySnapshot> getAllAnggotaStream() {
     return _db.collectionGroup('anggota_keluarga').snapshots();
   }
+
+  // === BANTUAN AKTIF (V2 MULTI-BANTUAN) ===
+
+  /// Stream bantuan aktif untuk satu warga
+  static Stream<QuerySnapshot> getBantuanAktifStream(String wargaDocId) {
+    return _db
+        .collection(_collection)
+        .doc(wargaDocId)
+        .collection('bantuan_aktif')
+        .orderBy('created_at', descending: true)
+        .snapshots();
+  }
+
+  /// Ambil bantuan aktif sekali (bukan stream)
+  static Future<QuerySnapshot> getBantuanAktifOnce(String wargaDocId) async {
+    return await _db
+        .collection(_collection)
+        .doc(wargaDocId)
+        .collection('bantuan_aktif')
+        .get();
+  }
+
+  /// Tambah bantuan aktif
+  static Future<String> addBantuanAktif(String wargaDocId, Map<String, dynamic> data) async {
+    final ref = await _db
+        .collection(_collection)
+        .doc(wargaDocId)
+        .collection('bantuan_aktif')
+        .add(data);
+    return ref.id;
+  }
+
+  /// Update bantuan aktif
+  static Future<void> updateBantuanAktif(
+      String wargaDocId, String bantuanDocId, Map<String, dynamic> data) async {
+    await _db
+        .collection(_collection)
+        .doc(wargaDocId)
+        .collection('bantuan_aktif')
+        .doc(bantuanDocId)
+        .update(data);
+  }
+
+  /// Hapus bantuan aktif
+  static Future<void> deleteBantuanAktif(String wargaDocId, String bantuanDocId) async {
+    await _db
+        .collection(_collection)
+        .doc(wargaDocId)
+        .collection('bantuan_aktif')
+        .doc(bantuanDocId)
+        .delete();
+  }
+
+  /// Stream seluruh bantuan aktif secara global (Collection Group)
+  static Stream<QuerySnapshot> getAllBantuanAktifStream() {
+    return _db.collectionGroup('bantuan_aktif').snapshots();
+  }
 }
