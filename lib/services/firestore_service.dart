@@ -192,4 +192,49 @@ class FirestoreService {
   static Stream<QuerySnapshot> getAllBantuanAktifStream() {
     return _db.collectionGroup('bantuan_aktif').snapshots();
   }
+
+  /// Migrasi Data V1 ke V2
+  static Future<int> runDataMigration() async {
+    int migratedCount = 0;
+    try {
+      final snapshot = await _db.collection(_collection).get();
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        // Cek apakah data model versi 1 memiliki bantuan tunggal
+        final String? jenisBantuanLama = data['jenis_bantuan'] as String?;
+        final String? statusCairLama = data['status_cair'] as String?;
+        final dynamic tglDiterimaLama = data['tanggal_diterima'];
+        final String menerimaBantuan = data['menerima_bantuan'] ?? 'Tidak';
+
+        if (menerimaBantuan == 'Ya' && jenisBantuanLama != null && jenisBantuanLama != '-') {
+          // Cek apakah subkoleksi bantuan_aktif sudah ada datanya
+          final subcollection = await doc.reference.collection('bantuan_aktif').get();
+          if (subcollection.docs.isEmpty) {
+            // Migrasi ke bantuan_aktif subkoleksi
+            final Map<String, dynamic> newBantuan = {
+              'jenis_bantuan': jenisBantuanLama,
+              'status_cair': statusCairLama ?? 'Belum Menerima',
+              'tanggal_pencairan': tglDiterimaLama,
+              'dikonfirmasi_warga': statusCairLama == 'Dikonfirmasi Warga',
+              'tanggal_konfirmasi': statusCairLama == 'Dikonfirmasi Warga' ? tglDiterimaLama : null,
+              'catatan_warga': null,
+              'created_at': FieldValue.serverTimestamp(),
+            };
+            await doc.reference.collection('bantuan_aktif').add(newBantuan);
+            
+            // Hapus field V1 dari dokumen utama (gunakan FieldValue.delete())
+            await doc.reference.update({
+              'jenis_bantuan': FieldValue.delete(),
+              'status_cair': statusCairLama ?? 'Belum Menerima', // Simpan status_cair di dokumen utama sebagai cache marker
+              'tanggal_diterima': FieldValue.delete(),
+            });
+            migratedCount++;
+          }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return migratedCount;
+  }
 }
