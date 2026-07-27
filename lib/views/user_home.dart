@@ -609,9 +609,9 @@ class _UserHomePageState extends State<UserHomePage> {
                             backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.blue[600],
                             child: isLoggedInWarga
                                 ? IconButton(
-                                    icon: const Icon(Icons.person, color: Colors.white),
-                                    tooltip: "Profil Saya",
-                                    onPressed: () => _showProfilWarga(context, authProvider.user!.email!),
+                                    icon: const Icon(Icons.dashboard, color: Colors.white),
+                                    tooltip: "Dashboard Saya",
+                                    onPressed: () => Navigator.pushReplacementNamed(context, '/user_dashboard'),
                                   )
                                 : IconButton(
                                     icon: const Icon(Icons.login, color: Colors.white),

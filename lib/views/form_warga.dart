@@ -231,34 +231,6 @@ class _FormWargaPageState extends State<FormWargaPage> {
     }
 
     final newStatus = _apakahMenerimaBantuan == 'Ya' ? _statusPenerimaanSaatIni : '-';
-    DateTime? tanggalDiterima;
-    bool shouldAddHistory = false; 
-
-    if (newStatus == 'Sudah Menerima') {
-      final oldStatus = widget.existingData != null ? (widget.existingData!['status_cair'] ?? 'Belum Menerima') : 'Belum Menerima';
-      if (oldStatus == 'Sudah Menerima') {
-        if (_catatSebagaiRiwayatBaru) {
-          tanggalDiterima = DateTime.now();
-          shouldAddHistory = true;
-        } else {
-          if (widget.existingData != null && widget.existingData!['tanggal_diterima'] != null) {
-            final dynamic rawDate = widget.existingData!['tanggal_diterima'];
-            if (rawDate is Timestamp) {
-              tanggalDiterima = rawDate.toDate();
-            } else if (rawDate is DateTime) {
-              tanggalDiterima = rawDate;
-            }
-          }
-          tanggalDiterima ??= DateTime.now();
-        }
-      } else {
-        tanggalDiterima = DateTime.now();
-        shouldAddHistory = true;
-      }
-    } else {
-      tanggalDiterima = null;
-    }
-
     final warga = Warga(
       id: widget.docId ?? '',
       nama: _namaController.text.trim(),
@@ -266,18 +238,29 @@ class _FormWargaPageState extends State<FormWargaPage> {
       noKk: _kkController.text.trim(),
       blok: _blokController.text.trim(),
       koordinat: _lokasiTerpilih!,
-      menerimaBantuan: _apakahMenerimaBantuan,
-      jenisBantuan: _apakahMenerimaBantuan == 'Ya' ? _jenisBantuanController.text.trim() : '-',
-      statusBansos: newStatus,
+      menerimaBantuan: _isEditMode ? _apakahMenerimaBantuan : (_apakahMenerimaBantuan == 'Ya' ? 'Ya' : 'Tidak'),
       fotoUrl: _existingFotoUrl ?? '',
-      tanggalDiterima: tanggalDiterima,
     );
+
+    List<Map<String, dynamic>>? initialBantuan;
+    if (!_isEditMode && _apakahMenerimaBantuan == 'Ya') {
+      initialBantuan = [
+        {
+          'jenis_bantuan': _jenisBantuanController.text.trim(),
+          'status_cair': _statusPenerimaanSaatIni,
+          'tanggal_pencairan': _statusPenerimaanSaatIni == 'Sudah Menerima' ? FieldValue.serverTimestamp() : null,
+          'dikonfirmasi_warga': false,
+          'tanggal_konfirmasi': null,
+          'catatan_warga': null,
+        }
+      ];
+    }
 
     bool success;
     if (_isEditMode) {
-      success = await wargaProvider.updateWarga(widget.docId!, warga, _fotoRumah, shouldAddHistory: shouldAddHistory);
+      success = await wargaProvider.updateWarga(widget.docId!, warga, _fotoRumah);
     } else {
-      success = await wargaProvider.addWarga(warga, _fotoRumah);
+      success = await wargaProvider.addWarga(warga, _fotoRumah, initialBantuan: initialBantuan);
     }
 
     if (mounted) {
@@ -497,109 +480,86 @@ class _FormWargaPageState extends State<FormWargaPage> {
               ),
             const SizedBox(height: 24),
 
-            _buildSectionTitle("4. STATUS BANTUAN SOSIAL", isDark),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _apakahMenerimaBantuan,
-              decoration: const InputDecoration(labelText: "Apakah Keluarga Ini Menerima Bantuan?"),
-              dropdownColor: theme.colorScheme.surface,
-              items: ['Ya', 'Tidak'].map((value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  _apakahMenerimaBantuan = newValue!;
-                });
-              },
-            ),
-            if (_apakahMenerimaBantuan == 'Ya') ...[
+            if (!_isEditMode) ...[
+              _buildSectionTitle("4. STATUS BANTUAN SOSIAL", isDark),
               const SizedBox(height: 16),
-              _buildInputBox(
-                controller: _jenisBantuanController,
-                hint: "Jenis Bantuan (Contoh: PKH, BPNT)",
+              DropdownButtonFormField<String>(
+                value: _apakahMenerimaBantuan,
+                decoration: const InputDecoration(labelText: "Apakah Keluarga Ini Menerima Bantuan?"),
+                dropdownColor: theme.colorScheme.surface,
+                items: ['Ya', 'Tidak'].map((value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
+                onChanged: (newValue) {
+                  setState(() {
+                    _apakahMenerimaBantuan = newValue!;
+                  });
+                },
               ),
-              const SizedBox(height: 16),
-              Card(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.grey[300]!),
+              if (_apakahMenerimaBantuan == 'Ya') ...[
+                const SizedBox(height: 16),
+                _buildInputBox(
+                  controller: _jenisBantuanController,
+                  hint: "Jenis Bantuan (Contoh: PKH, BPNT)",
                 ),
-                elevation: isDark ? 0 : 2,
-                shadowColor: Colors.black12,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Status Penerimaan Saat Ini :",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      RadioListTile<String>(
-                        title: Text(
-                          "Belum Menerima / Belum Cair",
+                const SizedBox(height: 16),
+                Card(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.grey[300]!),
+                  ),
+                  elevation: isDark ? 0 : 2,
+                  shadowColor: Colors.black12,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Status Penerimaan Saat Ini :",
                           style: TextStyle(
-                            color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+                            fontWeight: FontWeight.bold,
                             fontSize: 14,
+                            color: isDark ? Colors.white : Colors.black87,
                           ),
                         ),
-                        value: 'Belum Menerima',
-                        groupValue: _statusPenerimaanSaatIni,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: theme.colorScheme.primary,
-                        onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
-                      ),
-                      RadioListTile<String>(
-                        title: Text(
-                          "Sudah Menerima / Sudah Cair",
-                          style: TextStyle(
-                            color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
-                            fontSize: 14,
+                        const SizedBox(height: 8),
+                        RadioListTile<String>(
+                          title: Text(
+                            "Belum Menerima / Belum Cair",
+                            style: TextStyle(
+                              color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                        value: 'Sudah Menerima',
-                        groupValue: _statusPenerimaanSaatIni,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: theme.colorScheme.primary,
-                        onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
-                      ),
-                      if (_isEditMode &&
-                          widget.existingData != null &&
-                          widget.existingData!['status_cair'] == 'Sudah Menerima' &&
-                          _statusPenerimaanSaatIni == 'Sudah Menerima') ...[
-                        const Divider(height: 16),
-                        CheckboxListTile(
-                          title: const Text(
-                            "Catat sebagai penyaluran bansos baru",
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: const Text(
-                            "Centang jika warga ini baru saja menerima bantuan sosial lagi. Tanggal penerimaan akan diperbarui ke hari ini.",
-                            style: TextStyle(fontSize: 11, color: Colors.grey),
-                          ),
-                          value: _catatSebagaiRiwayatBaru,
+                          value: 'Belum Menerima',
+                          groupValue: _statusPenerimaanSaatIni,
                           dense: true,
                           contentPadding: EdgeInsets.zero,
                           activeColor: theme.colorScheme.primary,
-                          onChanged: (value) {
-                            setState(() {
-                              _catatSebagaiRiwayatBaru = value ?? false;
-                            });
-                          },
+                          onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
+                        ),
+                        RadioListTile<String>(
+                          title: Text(
+                            "Sudah Menerima / Sudah Cair",
+                            style: TextStyle(
+                              color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+                              fontSize: 14,
+                            ),
+                          ),
+                          value: 'Sudah Menerima',
+                          groupValue: _statusPenerimaanSaatIni,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: theme.colorScheme.primary,
+                          onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
                         ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
+              const SizedBox(height: 36),
             ],
-            const SizedBox(height: 36),
 
             // TOMBOL SIMPAN
             Container(

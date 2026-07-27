@@ -48,6 +48,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   BitmapDescriptor? _blueDotIcon;
   BitmapDescriptor? _greenDotIcon;
   BitmapDescriptor? _redDotIcon;
+  BitmapDescriptor? _amberDotIcon;
   BitmapDescriptor? _purpleDotIcon;
   double? _lastDevicePixelRatio;
 
@@ -88,6 +89,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     _blueDotIcon = await _createDotIcon(const Color(0xFF1E3A8A), 7, dpr);
     _greenDotIcon = await _createDotIcon(Colors.green, 7, dpr);
     _redDotIcon = await _createDotIcon(Colors.red, 7, dpr);
+    _amberDotIcon = await _createDotIcon(Colors.amber, 7, dpr);
     _purpleDotIcon = await _createDotIcon(Colors.purple, 10, dpr);
     if (mounted) setState(() {});
   }
@@ -770,8 +772,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 if (isSelected) {
                   markerIcon = _purpleDotIcon;
                 } else if (data['menerima_bantuan'] == 'Ya') {
-                  if (data['status_cair'] == 'Sudah Menerima') {
+                  final String status = data['status_cair'] ?? 'Belum Menerima';
+                  if (status == 'Dikonfirmasi Warga') {
                     markerIcon = _greenDotIcon;
+                  } else if (status == 'Sudah Menerima') {
+                    markerIcon = _amberDotIcon;
                   } else {
                     markerIcon = _redDotIcon;
                   }
@@ -784,8 +789,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   if (isSelected) {
                     markerHue = BitmapDescriptor.hueViolet;
                   } else if (data['menerima_bantuan'] == 'Ya') {
-                    if (data['status_cair'] == 'Sudah Menerima') {
+                    final String status = data['status_cair'] ?? 'Belum Menerima';
+                    if (status == 'Dikonfirmasi Warga') {
                       markerHue = BitmapDescriptor.hueGreen;
+                    } else if (status == 'Sudah Menerima') {
+                      markerHue = BitmapDescriptor.hueOrange;
                     } else {
                       markerHue = BitmapDescriptor.hueRed;
                     }
@@ -1043,36 +1051,23 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       
                       const SizedBox(width: 8), // Jarak ke tombol Profil/Logout
 
-                      // --- TOMBOL LOGOUT ---
+                      // --- TOMBOL KEMBALI KE DASHBOARD ---
                           Padding(
                             padding: const EdgeInsets.only(top: 4.0),
                             child: Material(
                               elevation: 5,
                               shape: const CircleBorder(),
-                              color: Colors.red,
+                              color: const Color(0xFF3B82F6),
                               child: CircleAvatar(
-                                backgroundColor: Colors.red,
+                                backgroundColor: const Color(0xFF3B82F6),
                                 child: IconButton(
                                   icon: const Icon(
-                                    Icons.logout,
+                                    Icons.dashboard,
                                     color: Colors.white,
                                   ),
-                                  tooltip: "Logout Admin",
-                                  onPressed: () async {
-                                    await authProvider.signOut();
-
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text("Berhasil keluar dari akun Admin")),
-                                      );
-                                      Navigator.pushAndRemoveUntil(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const UserHomePage(),
-                                        ),
-                                        (route) => false,
-                                      );
-                                    }
+                                  tooltip: "Kembali ke Dashboard",
+                                  onPressed: () {
+                                    Navigator.pushReplacementNamed(context, '/admin_dashboard');
                                   },
                                 ),
                               ),
@@ -1080,8 +1075,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           ),
                         ],
                       ),
-                      if (_searchQuery.isEmpty)
-                        _buildDashboardCards(isDark, allWargaDocs, allAnggotaDocs),
                     ],
                   ),
                 ),
