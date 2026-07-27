@@ -837,7 +837,7 @@ class _UserHomePageState extends State<UserHomePage> {
           _activeController = null;
         });
         _searchFocusNode.unfocus();
-        FocusScope.of(context).unfocus();
+        FocusManager.instance.primaryFocus?.unfocus();
       }
     });
   }

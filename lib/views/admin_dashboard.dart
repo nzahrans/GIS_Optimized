@@ -261,69 +261,95 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             color: isDark ? Colors.white : const Color(0xFF1E293B),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        GridView.count(
-                          crossAxisCount: 2,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 2.2,
-                          children: [
-                            StatistikCard(
-                              title: "Total KK",
-                              value: "$totalKK KK",
-                              icon: Icons.family_restroom,
-                              color: Colors.blue,
-                            ),
-                            StatistikCard(
-                              title: "Total Penduduk",
-                              value: "$totalPenduduk Jiwa",
-                              icon: Icons.people,
-                              color: Colors.indigo,
-                            ),
-                            StatistikCard(
-                              title: "Penerima Bantuan",
-                              value: "$totalPenerima Warga",
-                              icon: Icons.card_membership,
-                              color: Colors.amber,
-                            ),
-                            StatistikCard(
-                              title: "Bantuan Terpetakan",
-                              value: "$totalTerpetakan KK",
-                              icon: Icons.location_on,
-                              color: Colors.orange,
-                            ),
-                          ],
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: StatistikCard(
+                                  title: "Total KK",
+                                  value: "$totalKK KK",
+                                  icon: Icons.family_restroom,
+                                  color: Colors.blue,
+                                  isVertical: true,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: StatistikCard(
+                                  title: "Total Penduduk",
+                                  value: "$totalPenduduk Jiwa",
+                                  icon: Icons.people,
+                                  color: Colors.indigo,
+                                  isVertical: true,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 12),
-                        GridView.count(
-                          crossAxisCount: 3,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 1.4,
-                          children: [
-                            StatistikCard(
-                              title: "Belum Cair",
-                              value: "$totalBelumCair",
-                              icon: Icons.hourglass_empty,
-                              color: Colors.red,
-                            ),
-                            StatistikCard(
-                              title: "Sudah Cair",
-                              value: "$totalSudahCair",
-                              icon: Icons.check_circle_outline,
-                              color: Colors.orangeAccent,
-                            ),
-                            StatistikCard(
-                              title: "Konfirmasi",
-                              value: "$totalDikonfirmasi",
-                              icon: Icons.verified_user,
-                              color: Colors.green,
-                            ),
-                          ],
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: StatistikCard(
+                                  title: "Penerima Bantuan",
+                                  value: "$totalPenerima Warga",
+                                  icon: Icons.card_membership,
+                                  color: Colors.amber,
+                                  isVertical: true,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: StatistikCard(
+                                  title: "Rumah Terpetakan",
+                                  value: "$totalTerpetakan KK",
+                                  icon: Icons.location_on,
+                                  color: Colors.orange,
+                                  isVertical: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: StatistikCard(
+                                  title: "Belum Cair",
+                                  value: "$totalBelumCair",
+                                  icon: Icons.hourglass_empty,
+                                  color: Colors.red,
+                                  isVertical: true,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: StatistikCard(
+                                  title: "Sudah Cair",
+                                  value: "$totalSudahCair",
+                                  icon: Icons.check_circle_outline,
+                                  color: Colors.orangeAccent,
+                                  isVertical: true,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: StatistikCard(
+                                  title: "Konfirmasi",
+                                  value: "$totalDikonfirmasi",
+                                  icon: Icons.verified_user,
+                                  color: Colors.green,
+                                  isVertical: true,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 16),
                         // Card Tingkat Konfirmasi Warga

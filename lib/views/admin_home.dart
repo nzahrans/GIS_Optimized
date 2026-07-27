@@ -1344,7 +1344,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           _activeController = null;
         });
         _searchFocusNode.unfocus();
-        FocusScope.of(context).unfocus();
+        FocusManager.instance.primaryFocus?.unfocus();
       }
     });
   }
