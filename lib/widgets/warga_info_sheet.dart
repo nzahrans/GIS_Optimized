@@ -7,6 +7,7 @@ import '../services/firestore_service.dart';
 import '../views/form_anggota.dart';
 import '../utils/date_formatter.dart';
 import 'custom_alert_dialog.dart';
+import 'bantuan_status_badge.dart';
 
 class WargaInfoSheet extends StatelessWidget {
   final String docId;
@@ -107,36 +108,129 @@ class WargaInfoSheet extends StatelessWidget {
 
               // NIK & No KK (Admin Only)
               if (isAdmin) ...[
-                _infoRow("NIK", data['nik'], isDark), //[cite: 1]
-                _infoRow("No. KK", data['no_kk'], isDark), //[cite: 1]
+                _infoRow("NIK", data['nik'], isDark),
+                _infoRow("No. KK", data['no_kk'], isDark),
               ],
-              _infoRow("Blok/Gang", data['blok'], isDark), //[cite: 1]
+              _infoRow("Blok/Gang", data['blok'], isDark),
               
               if (isAdmin) ...[
                 const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12), //[cite: 1]
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(isDark ? 0.1 : 0.05), //[cite: 1]
-                    borderRadius: BorderRadius.circular(12), //[cite: 1]
-                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.1)), //[cite: 1]
-                  ),
-                  child: Column(
-                    children: [
-                      _infoRow("Terima Bantuan?", data['menerima_bantuan'], isDark), //[cite: 1]
-                      if (data['menerima_bantuan'] == 'Ya') ...[ //[cite: 1]
-                        const Divider(height: 16),
-                        _infoRow("Jenis Bantuan", data['jenis_bantuan'], isDark), //[cite: 1]
-                        _infoRow("Status Cair", data['status_cair'], isDark), //[cite: 1]
-                        if (data['status_cair'] == 'Sudah Menerima' && data['tanggal_diterima'] != null) //[cite: 1]
-                          _infoRow(
-                            "Waktu Diterima", //[cite: 1]
-                            DateFormatter.formatIndonesianDate(data['tanggal_diterima']), //[cite: 1]
-                            isDark,
-                          ),
-                      ]
-                    ],
-                  ),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirestoreService.getBantuanAktifStream(docId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
+                      );
+                    }
+                    final bantuanDocs = snapshot.data?.docs ?? [];
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(isDark ? 0.1 : 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.1)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _infoRow("Terima Bantuan?", data['menerima_bantuan'], isDark),
+                          if (data['menerima_bantuan'] == 'Ya' && bantuanDocs.isNotEmpty) ...[
+                            const Divider(height: 16),
+                            const Text(
+                              "DAFTAR BANTUAN AKTIF",
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
+                            ),
+                            const SizedBox(height: 8),
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: bantuanDocs.length,
+                              separatorBuilder: (context, idx) => const Divider(height: 12),
+                              itemBuilder: (context, idx) {
+                                final bData = bantuanDocs[idx].data() as Map<String, dynamic>;
+                                final String bId = bantuanDocs[idx].id;
+                                final String jenis = bData['jenis_bantuan'] ?? '-';
+                                final String status = bData['status_cair'] ?? 'Belum Menerima';
+                                final Timestamp? tglPencairan = bData['tanggal_pencairan'];
+
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            jenis,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          if (status == 'Sudah Menerima' && tglPencairan != null)
+                                            Text(
+                                              "Cair: ${DateFormatter.formatIndonesianDate(tglPencairan.toDate())}",
+                                              style: const TextStyle(color: Colors.grey, fontSize: 10),
+                                            )
+                                          else if (status == 'Dikonfirmasi Warga' && bData['tanggal_konfirmasi'] != null)
+                                            Text(
+                                              "Konfirm: ${DateFormatter.formatIndonesianDate((bData['tanggal_konfirmasi'] as Timestamp).toDate())}",
+                                              style: const TextStyle(color: Colors.grey, fontSize: 10),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Row(
+                                      children: [
+                                        BantuanStatusBadge(status: status),
+                                        if (status == 'Belum Menerima') ...[
+                                          const SizedBox(width: 8),
+                                          IconButton(
+                                            icon: const Icon(Icons.payment, color: Colors.orange, size: 20),
+                                            constraints: const BoxConstraints(),
+                                            padding: EdgeInsets.zero,
+                                            tooltip: "Cairkan Bantuan",
+                                            onPressed: () async {
+                                              final success = await context.read<WargaProvider>().updateBantuanStatus(
+                                                docId,
+                                                bId,
+                                                'Sudah Menerima',
+                                              );
+                                              if (context.mounted) {
+                                                if (success) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text("Bantuan berhasil dicairkan!"),
+                                                      backgroundColor: Colors.green,
+                                                    ),
+                                                  );
+                                                } else {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(context.read<WargaProvider>().errorMessage ?? "Gagal mencairkan bantuan"),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
               if (isAdmin) ...[

@@ -42,7 +42,10 @@ class _UserHomePageState extends State<UserHomePage> {
   String _searchQuery = "";
 
   BitmapDescriptor? _blueDotIcon;
+  BitmapDescriptor? _greenDotIcon;
   BitmapDescriptor? _redDotIcon;
+  BitmapDescriptor? _amberDotIcon;
+  BitmapDescriptor? _purpleDotIcon;
   double? _lastDevicePixelRatio;
 
   @override
@@ -67,7 +70,10 @@ class _UserHomePageState extends State<UserHomePage> {
 
   Future<void> _initMarkerIcons(double dpr) async {
     _blueDotIcon = await _createDotIcon(const Color(0xFF1E3A8A), 7, dpr);
-    _redDotIcon = await _createDotIcon(Colors.red, 10, dpr);
+    _greenDotIcon = await _createDotIcon(Colors.green, 7, dpr);
+    _redDotIcon = await _createDotIcon(Colors.red, 7, dpr);
+    _amberDotIcon = await _createDotIcon(Colors.amber, 7, dpr);
+    _purpleDotIcon = await _createDotIcon(Colors.purple, 10, dpr);
     if (mounted) setState(() {});
   }
 
@@ -389,13 +395,44 @@ class _UserHomePageState extends State<UserHomePage> {
                   selectedLatLng = LatLng(geoPoint.latitude, geoPoint.longitude);
                 }
 
+                BitmapDescriptor? markerIcon;
+                if (isSelected) {
+                  markerIcon = _purpleDotIcon;
+                } else if (data['menerima_bantuan'] == 'Ya') {
+                  final String status = data['status_cair'] ?? 'Belum Menerima';
+                  if (status == 'Dikonfirmasi Warga') {
+                    markerIcon = _greenDotIcon;
+                  } else if (status == 'Sudah Menerima') {
+                    markerIcon = _amberDotIcon;
+                  } else {
+                    markerIcon = _redDotIcon;
+                  }
+                } else {
+                  markerIcon = _blueDotIcon;
+                }
+
+                if (markerIcon == null) {
+                  double markerHue = BitmapDescriptor.hueBlue;
+                  if (isSelected) {
+                    markerHue = BitmapDescriptor.hueViolet;
+                  } else if (data['menerima_bantuan'] == 'Ya') {
+                    final String status = data['status_cair'] ?? 'Belum Menerima';
+                    if (status == 'Dikonfirmasi Warga') {
+                      markerHue = BitmapDescriptor.hueGreen;
+                    } else if (status == 'Sudah Menerima') {
+                      markerHue = BitmapDescriptor.hueOrange;
+                    } else {
+                      markerHue = BitmapDescriptor.hueRed;
+                    }
+                  }
+                  markerIcon = BitmapDescriptor.defaultMarkerWithHue(markerHue);
+                }
+
                 markers.add(
                   Marker(
                     markerId: MarkerId(doc.id),
                     position: LatLng(geoPoint.latitude, geoPoint.longitude),
-                    icon: isSelected
-                        ? (_redDotIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed))
-                        : (_blueDotIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)),
+                    icon: markerIcon,
                     onTap: () => _showWargaInfo(context, doc.id, data),
                   ),
                 );
@@ -842,299 +879,7 @@ class _UserHomePageState extends State<UserHomePage> {
     });
   }
 
-  void _showProfilWarga(BuildContext context, String email) {
-    final String nik = email.split('@')[0];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Stream<QuerySnapshot> profileStream = FirebaseFirestore.instance
-        .collection('warga')
-        .where('nik', isEqualTo: nik)
-        .snapshots();
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false, // WAJIB FALSE agar sheet tidak melar kosong ke atas
-          initialChildSize: 0.6, // Ukuran awal saat muncul (60% layar)
-          minChildSize: 0.3,     // Batas minimum sebelum tertutup
-          maxChildSize: 0.9,     // Ukuran maksimal saat ditarik ke atas
-          builder: (context, scrollController) {
-        
-            return StreamBuilder<QuerySnapshot>(
-              stream: profileStream,
-              builder: (context, snapshot) {
-
-                // --- STATE LOADING ---
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(
-                    height: 200,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                // --- STATE ERROR / KOSONG ---
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return SingleChildScrollView(
-                    controller: scrollController,
-                    physics: const ClampingScrollPhysics(),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                            const SizedBox(height: 12),
-                            const Text(
-                              "Profil Warga Tidak Ditemukan",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "Akun NIK $nik belum terdaftar di sistem warga Ketua RT.\nSilakan hubungi Ketua RT.",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                            const SizedBox(height: 24),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                ),
-                                onPressed: () async {
-                                  Navigator.pop(context);
-                                  await context.read<AuthProvider>().signOut();
-                                },
-                                child: const Text("Keluar Sesi / Logout"),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }
-
-                final docId = snapshot.data!.docs.first.id;
-                final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
-
-                return SafeArea(
-                  child: Container(
-                    padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
-                    width: double.infinity,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            data['nama'] ?? 'Tanpa Nama',
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                          ),
-                          const Text("Akun Resmi Warga Tegalsari", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                          const Divider(height: 24),
-                          const Text(
-                            "DATA KEPENDUDUKAN",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey, letterSpacing: 1.1),
-                          ),
-                          const SizedBox(height: 8),
-                          _profilRow("Nama Kepala Keluarga", data['nama']),
-                          _profilRow("NIK", data['nik']),
-                          _profilRow("No. KK", data['no_kk']),
-                          _profilRow("Blok/Gang", data['blok']),
-                          const SizedBox(height: 24),
-
-                          const Text(
-                            "STATUS BANTUAN SOSIAL (BANSOS)",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey, letterSpacing: 1.1),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: data['menerima_bantuan'] == 'Ya'
-                                  ? Colors.green.withOpacity(isDark ? 0.1 : 0.05)
-                                  : Colors.grey.withOpacity(isDark ? 0.1 : 0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: data['menerima_bantuan'] == 'Ya'
-                                    ? Colors.green.withOpacity(isDark ? 0.3 : 0.1)
-                                    : Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                _profilRow("Penerima Bantuan?", data['menerima_bantuan']),
-                                if (data['menerima_bantuan'] == 'Ya') ...[
-                                  const Divider(height: 16),
-                                  _profilRow("Jenis Bantuan", data['jenis_bantuan']),
-                                  _profilRow("Status Cair", data['status_cair']),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          const Text(
-                            "RIWAYAT PENYALURAN BANSOS",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey, letterSpacing: 1.1),
-                          ),
-                          const SizedBox(height: 8),
-                          
-                          StreamBuilder<QuerySnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('warga')
-                                .doc(docId)
-                                .collection('riwayat_bansos')
-                                .orderBy('tanggal_diterima', descending: true)
-                                .snapshots(),
-                            builder: (context, riwayatSnapshot) {
-                              if (riwayatSnapshot.connectionState == ConnectionState.waiting) {
-                                  return const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 20),
-                                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                                  );
-                              }
-
-                              if (!riwayatSnapshot.hasData || riwayatSnapshot.data!.docs.isEmpty) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                    child: Text(
-                                      data['menerima_bantuan'] == 'Ya'
-                                          ? "Belum ada riwayat penerimaan bansos untuk akun ini."
-                                          : "Tidak ada riwayat bantuan sosial untuk akun NIK ini.",
-                                      style: const TextStyle(color: Colors.grey, fontSize: 13),
-                                    ),
-                                  );
-                              }
-
-                              return ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: riwayatSnapshot.data!.docs.length,
-                                separatorBuilder: (context, index) => const Divider(height: 16),
-                                itemBuilder: (context, index) {
-                                  final riwayatData = riwayatSnapshot.data!.docs[index].data() as Map<String, dynamic>;
-                                  final jenisBantuan = riwayatData['jenis_bantuan'] ?? '-';
-                                  final rawDate = riwayatData['tanggal_diterima'];
-                                  
-                                  String tanggalFormat = '-';
-                                  if (rawDate != null) {
-                                    if (rawDate is Timestamp) {
-                                      tanggalFormat = DateFormatter.formatIndonesianDate(rawDate.toDate());
-                                    } else if (rawDate is String) {
-                                      tanggalFormat = rawDate;
-                                    }
-                                  }
-
-                                  return ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    leading: CircleAvatar(
-                                      backgroundColor: isDark ? Colors.green.withOpacity(0.2) : const Color(0xFFDCFCE7),
-                                      child: const Icon(Icons.check_circle, color: Colors.green),
-                                    ),
-                                    title: Text(
-                                      "Bantuan $jenisBantuan",
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    ),
-                                    subtitle: Padding(
-                                      padding: const EdgeInsets.only(top: 4.0),
-                                      child: Text(
-                                        "Diterima pada: $tanggalFormat",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isDark ? Colors.green[400] : Colors.green[800],
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    side: BorderSide(color: Theme.of(context).colorScheme.primary),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  onPressed: () {
-                                    _showUbahPasswordDialog(context);
-                                  },
-                                  icon: const Icon(Icons.lock_reset),
-                                  label: const Text("Ubah Password"),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    backgroundColor: Colors.red[800],
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  onPressed: () async {
-                                    Navigator.pop(context);
-                                    await context.read<AuthProvider>().signOut();
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text("Berhasil keluar dari akun warga")),
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(Icons.logout),
-                                  label: const Text("Keluar Sesi"),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _profilRow(String label, dynamic value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              value?.toString() ?? '-',
-              textAlign: TextAlign.end,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showUbahPasswordDialog(BuildContext parentContext) {
     final formKey = GlobalKey<FormState>();
