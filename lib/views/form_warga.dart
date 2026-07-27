@@ -28,6 +28,9 @@ class _FormWargaPageState extends State<FormWargaPage> {
   final _koordinatController = TextEditingController();
   final _jenisBantuanController = TextEditingController();
 
+  List<Map<String, dynamic>> _bantuanList = [];
+  final TextEditingController _tambahBantuanController = TextEditingController();
+
   String _apakahMenerimaBantuan = 'Tidak';
   String _statusPenerimaanSaatIni = 'Belum Menerima';
   LatLng? _lokasiTerpilih;
@@ -47,14 +50,33 @@ class _FormWargaPageState extends State<FormWargaPage> {
       _namaController.text = d['nama'] ?? '';
       _blokController.text = d['blok'] ?? '';
       _apakahMenerimaBantuan = d['menerima_bantuan'] ?? 'Tidak';
-      _jenisBantuanController.text = d['jenis_bantuan'] ?? '';
-      _statusPenerimaanSaatIni = d['status_cair'] ?? 'Belum Menerima';
       _existingFotoUrl = d['foto_url'];
       if (d['lokasi'] != null) {
         final GeoPoint gp = d['lokasi'];
         _lokasiTerpilih = LatLng(gp.latitude, gp.longitude);
         _koordinatController.text = '${gp.latitude}, ${gp.longitude}';
       }
+
+      // Load bantuan aktif subcollection
+      FirebaseFirestore.instance
+          .collection('warga')
+          .doc(widget.docId)
+          .collection('bantuan_aktif')
+          .get()
+          .then((snapshot) {
+        if (mounted) {
+          setState(() {
+            _bantuanList = snapshot.docs.map((doc) => {
+              'id': doc.id,
+              'jenis_bantuan': doc.data()['jenis_bantuan'] ?? '',
+              'status_cair': doc.data()['status_cair'] ?? 'Belum Menerima',
+            }).toList();
+            if (_bantuanList.isNotEmpty) {
+              _apakahMenerimaBantuan = 'Ya';
+            }
+          });
+        }
+      });
     }
   }
 
@@ -66,6 +88,7 @@ class _FormWargaPageState extends State<FormWargaPage> {
     _blokController.dispose();
     _koordinatController.dispose();
     _jenisBantuanController.dispose();
+    _tambahBantuanController.dispose();
     super.dispose();
   }
 
@@ -230,7 +253,6 @@ class _FormWargaPageState extends State<FormWargaPage> {
       return;
     }
 
-    final newStatus = _apakahMenerimaBantuan == 'Ya' ? _statusPenerimaanSaatIni : '-';
     final warga = Warga(
       id: widget.docId ?? '',
       nama: _namaController.text.trim(),
@@ -238,27 +260,57 @@ class _FormWargaPageState extends State<FormWargaPage> {
       noKk: _kkController.text.trim(),
       blok: _blokController.text.trim(),
       koordinat: _lokasiTerpilih!,
-      menerimaBantuan: _isEditMode ? _apakahMenerimaBantuan : (_apakahMenerimaBantuan == 'Ya' ? 'Ya' : 'Tidak'),
+      menerimaBantuan: _apakahMenerimaBantuan == 'Ya' ? 'Ya' : 'Tidak',
       fotoUrl: _existingFotoUrl ?? '',
     );
 
     List<Map<String, dynamic>>? initialBantuan;
     if (!_isEditMode && _apakahMenerimaBantuan == 'Ya') {
-      initialBantuan = [
-        {
-          'jenis_bantuan': _jenisBantuanController.text.trim(),
-          'status_cair': _statusPenerimaanSaatIni,
-          'tanggal_pencairan': _statusPenerimaanSaatIni == 'Sudah Menerima' ? FieldValue.serverTimestamp() : null,
-          'dikonfirmasi_warga': false,
-          'tanggal_konfirmasi': null,
-          'catatan_warga': null,
-        }
-      ];
+      initialBantuan = _bantuanList.map((item) => {
+        'jenis_bantuan': item['jenis_bantuan'],
+        'status_cair': item['status_cair'],
+      }).toList();
     }
 
     bool success;
     if (_isEditMode) {
       success = await wargaProvider.updateWarga(widget.docId!, warga, _fotoRumah);
+      if (success) {
+        final String wargaDocId = widget.docId!;
+        final existingBansosSnapshot = await FirebaseFirestore.instance
+            .collection('warga')
+            .doc(wargaDocId)
+            .collection('bantuan_aktif')
+            .get();
+
+        final existingBansosDocs = existingBansosSnapshot.docs;
+        final existingBansosIds = existingBansosDocs.map((doc) => doc.id).toSet();
+        final currentBantuanIds = _bantuanList.map((item) => item['id'] as String?).where((id) => id != null).toSet();
+
+        // Hapus bantuan yang tidak ada lagi
+        for (var doc in existingBansosDocs) {
+          if (!currentBantuanIds.contains(doc.id)) {
+            await wargaProvider.deleteBantuan(wargaDocId, doc.id);
+          }
+        }
+
+        // Tambah atau update bantuan
+        for (var item in _bantuanList) {
+          final String? id = item['id'];
+          final String jenis = item['jenis_bantuan'];
+          final String status = item['status_cair'];
+
+          if (id == null) {
+            await wargaProvider.addBantuan(wargaDocId, jenis, status);
+          } else {
+            final matchedDoc = existingBansosDocs.firstWhere((doc) => doc.id == id);
+            final String oldStatus = matchedDoc.data()['status_cair'] ?? 'Belum Menerima';
+            if (oldStatus != status) {
+              await wargaProvider.updateBantuanStatus(wargaDocId, id, status);
+            }
+          }
+        }
+      }
     } else {
       success = await wargaProvider.addWarga(warga, _fotoRumah, initialBantuan: initialBantuan);
     }
@@ -480,86 +532,151 @@ class _FormWargaPageState extends State<FormWargaPage> {
               ),
             const SizedBox(height: 24),
 
-            if (!_isEditMode) ...[
-              _buildSectionTitle("4. STATUS BANTUAN SOSIAL", isDark),
+            _buildSectionTitle("4. STATUS BANTUAN SOSIAL", isDark),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _apakahMenerimaBantuan,
+              decoration: const InputDecoration(labelText: "Apakah Keluarga Ini Menerima Bantuan?"),
+              dropdownColor: theme.colorScheme.surface,
+              items: ['Ya', 'Tidak'].map((value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  _apakahMenerimaBantuan = newValue!;
+                  if (_apakahMenerimaBantuan == 'Tidak') {
+                    _bantuanList.clear();
+                  }
+                });
+              },
+            ),
+            if (_apakahMenerimaBantuan == 'Ya') ...[
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _apakahMenerimaBantuan,
-                decoration: const InputDecoration(labelText: "Apakah Keluarga Ini Menerima Bantuan?"),
-                dropdownColor: theme.colorScheme.surface,
-                items: ['Ya', 'Tidak'].map((value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _apakahMenerimaBantuan = newValue!;
-                  });
-                },
-              ),
-              if (_apakahMenerimaBantuan == 'Ya') ...[
-                const SizedBox(height: 16),
-                _buildInputBox(
-                  controller: _jenisBantuanController,
-                  hint: "Jenis Bantuan (Contoh: PKH, BPNT)",
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.grey[300]!),
-                  ),
-                  elevation: isDark ? 0 : 2,
-                  shadowColor: Colors.black12,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Status Penerimaan Saat Ini :",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: isDark ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        RadioListTile<String>(
-                          title: Text(
-                            "Belum Menerima / Belum Cair",
-                            style: TextStyle(
-                              color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
-                              fontSize: 14,
-                            ),
-                          ),
-                          value: 'Belum Menerima',
-                          groupValue: _statusPenerimaanSaatIni,
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: theme.colorScheme.primary,
-                          onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
-                        ),
-                        RadioListTile<String>(
-                          title: Text(
-                            "Sudah Menerima / Sudah Cair",
-                            style: TextStyle(
-                              color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
-                              fontSize: 14,
-                            ),
-                          ),
-                          value: 'Sudah Menerima',
-                          groupValue: _statusPenerimaanSaatIni,
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: theme.colorScheme.primary,
-                          onChanged: (value) => setState(() => _statusPenerimaanSaatIni = value!),
-                        ),
-                      ],
+              // Tambah Bantuan Box
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInputBox(
+                      controller: _tambahBantuanController,
+                      hint: "Nama Program (Contoh: PKH Periode Juli 2026)",
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0), // Selaraskan dengan input box padding
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        final name = _tambahBantuanController.text.trim();
+                        if (name.isNotEmpty) {
+                          setState(() {
+                            _bantuanList.add({
+                              'jenis_bantuan': name,
+                              'status_cair': 'Belum Menerima',
+                            });
+                            _tambahBantuanController.clear();
+                          });
+                        }
+                      },
+                      child: const Icon(Icons.add),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // List Bantuan Aktif yang Sedang Di-edit/Input
+              if (_bantuanList.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    "Belum ada program bantuan yang ditambahkan.",
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _bantuanList.length,
+                  separatorBuilder: (context, idx) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final item = _bantuanList[index];
+                    final String jenis = item['jenis_bantuan'];
+                    final String status = item['status_cair'];
+
+                    return Card(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
+                      ),
+                      elevation: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    jenis,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Text("Status: ", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                      Text(
+                                        status == 'Sudah Menerima' ? 'Sudah Cair' : 'Belum Cair',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: status == 'Sudah Menerima' ? Colors.orange : Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Toggle Cair / Belum Cair
+                            IconButton(
+                              icon: Icon(
+                                status == 'Sudah Menerima' ? Icons.check_circle : Icons.radio_button_unchecked,
+                                color: status == 'Sudah Menerima' ? Colors.orange : Colors.grey,
+                              ),
+                              tooltip: status == 'Sudah Menerima' ? "Ubah ke Belum Cair" : "Ubah ke Sudah Cair",
+                              onPressed: () {
+                                setState(() {
+                                  _bantuanList[index]['status_cair'] =
+                                      status == 'Sudah Menerima' ? 'Belum Menerima' : 'Sudah Menerima';
+                                });
+                              },
+                            ),
+                            // Hapus Bantuan
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              tooltip: "Hapus Program Bantuan",
+                              onPressed: () {
+                                setState(() {
+                                  _bantuanList.removeAt(index);
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              ],
-              const SizedBox(height: 36),
             ],
+            const SizedBox(height: 36),
 
             // TOMBOL SIMPAN
             Container(
