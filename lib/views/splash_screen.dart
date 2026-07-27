@@ -29,7 +29,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         if (authProvider.role == 'admin') {
           Navigator.pushReplacementNamed(context, '/admin_dashboard');
         } else {
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.pushReplacementNamed(context, '/user_dashboard');
         }
       } else {
         // PERUBAHAN DI SINI: Jika belum login, langsung diarahkan ke peta warga

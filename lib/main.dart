@@ -15,6 +15,10 @@ import 'views/splash_screen.dart';
 import 'views/user_home.dart';
 import 'views/login_page.dart';
 import 'views/admin_home.dart';
+import 'views/admin_dashboard.dart';
+import 'views/user_dashboard.dart';
+import 'views/transparansi_bantuan.dart';
+import 'views/monitoring_bantuan.dart';
 
 // Import utils
 import 'utils/app_theme.dart';
@@ -57,7 +61,11 @@ class SIGBansosApp extends StatelessWidget {
               '/': (context) => const SplashScreen(),
               '/home': (context) => const UserHomePage(),
               '/login': (context) => const LoginPage(),
-              '/admin_dashboard': (context) => const AdminHomePage(),
+              '/admin_dashboard': (context) => const AdminDashboardPage(),
+              '/admin_map': (context) => const AdminHomePage(),
+              '/admin_monitoring': (context) => const MonitoringBantuanPage(),
+              '/user_dashboard': (context) => const UserDashboardPage(),
+              '/transparansi': (context) => const TransparansiBantuanPage(),
             },
           );
         },

@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
         if (authProvider.role == 'admin') {
           Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
         } else {
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+          Navigator.pushNamedAndRemoveUntil(context, '/user_dashboard', (route) => false);
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
