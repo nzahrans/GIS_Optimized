@@ -307,7 +307,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Dashboard Warga Padamulya",
+          "Dashboard Warga Tegalsari",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -340,7 +340,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                   child: Icon(Icons.person, size: 40, color: Color(0xFF3B82F6)),
                 ),
                 accountName: const Text(
-                  "Warga Desa Padamulya",
+                  "Warga Tegalsari",
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 accountEmail: Text(userEmail),

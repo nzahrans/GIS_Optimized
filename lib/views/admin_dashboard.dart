@@ -214,7 +214,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "Pantau penyaluran bantuan sosial Padamulya",
+                                  "Pantau penyaluran bantuan sosial Tegalsari",
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: isDark ? Colors.grey[400] : Colors.grey[600],
