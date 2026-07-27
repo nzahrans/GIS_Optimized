@@ -26,7 +26,6 @@ class _FormWargaPageState extends State<FormWargaPage> {
   final _namaController = TextEditingController();
   final _blokController = TextEditingController();
   final _koordinatController = TextEditingController();
-  final _jenisBantuanController = TextEditingController();
 
   List<Map<String, dynamic>> _bantuanList = [];
   final TextEditingController _tambahBantuanController = TextEditingController();
@@ -87,7 +86,6 @@ class _FormWargaPageState extends State<FormWargaPage> {
     _namaController.dispose();
     _blokController.dispose();
     _koordinatController.dispose();
-    _jenisBantuanController.dispose();
     _tambahBantuanController.dispose();
     super.dispose();
   }
@@ -235,9 +233,22 @@ class _FormWargaPageState extends State<FormWargaPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Harap tentukan lokasi rumah!")));
       return;
     }
-    if (_apakahMenerimaBantuan == 'Ya' && _jenisBantuanController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Harap isi Jenis Bantuan!")));
-      return;
+    if (_apakahMenerimaBantuan == 'Ya') {
+      final typedText = _tambahBantuanController.text.trim();
+      if (typedText.isNotEmpty) {
+        setState(() {
+          _bantuanList.add({
+            'jenis_bantuan': typedText,
+            'status_cair': 'Belum Menerima',
+          });
+          _tambahBantuanController.clear();
+        });
+      }
+
+      if (_bantuanList.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Harap isi Jenis Bantuan!")));
+        return;
+      }
     }
 
     final wargaProvider = context.read<WargaProvider>();

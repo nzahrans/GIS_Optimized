@@ -69,39 +69,8 @@ class WargaProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Pendaftaran akun warga secara otomatis via Secondary App
-      final String virtualEmail = '${warga.nik.trim()}@warga.sigbansos.com';
-      final String virtualPassword = '123456';
-
-      FirebaseApp? tempApp;
-      try {
-        tempApp = await Firebase.initializeApp(
-          name: 'TempWargaAuthApp',
-          options: Firebase.app().options,
-        );
-        final FirebaseAuth tempAuth = FirebaseAuth.instanceFor(app: tempApp);
-        final UserCredential cred = await tempAuth.createUserWithEmailAndPassword(
-          email: virtualEmail,
-          password: virtualPassword,
-        );
-        if (cred.user != null) {
-          await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
-            'email': virtualEmail,
-            'role': 'user',
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        }
-      } on FirebaseAuthException catch (authError) {
-        if (authError.code != 'email-already-in-use') {
-          rethrow;
-        }
-      } catch (authError) {
-        debugPrint('Autocreate Warga Auth Warning: $authError');
-      } finally {
-        if (tempApp != null) {
-          await tempApp.delete();
-        }
-      }
+      // 1. Pendaftaran akun warga secara otomatis via Secondary App (background / non-blocking)
+      _createWargaAuthInBackground(warga.nik.trim());
 
       // 2. Upload Foto Rumah ke Firebase Storage
       String fotoUrl = warga.fotoUrl;
@@ -159,39 +128,8 @@ class WargaProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Pendaftaran akun warga secara otomatis via Secondary App jika belum ada
-      final String virtualEmail = '${warga.nik.trim()}@warga.sigbansos.com';
-      final String virtualPassword = '123456';
-
-      FirebaseApp? tempApp;
-      try {
-        tempApp = await Firebase.initializeApp(
-          name: 'TempWargaAuthAppUpdate',
-          options: Firebase.app().options,
-        );
-        final FirebaseAuth tempAuth = FirebaseAuth.instanceFor(app: tempApp);
-        final UserCredential cred = await tempAuth.createUserWithEmailAndPassword(
-          email: virtualEmail,
-          password: virtualPassword,
-        );
-        if (cred.user != null) {
-          await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
-            'email': virtualEmail,
-            'role': 'user',
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        }
-      } on FirebaseAuthException catch (authError) {
-        if (authError.code != 'email-already-in-use') {
-          rethrow;
-        }
-      } catch (authError) {
-        debugPrint('Autocreate Warga Auth Warning (Update): $authError');
-      } finally {
-        if (tempApp != null) {
-          await tempApp.delete();
-        }
-      }
+      // Pendaftaran akun warga secara otomatis via Secondary App jika belum ada (background / non-blocking)
+      _createWargaAuthInBackground(warga.nik.trim());
 
       // Upload Foto Rumah ke Firebase Storage
       String fotoUrl = warga.fotoUrl;
@@ -485,6 +423,50 @@ class WargaProvider extends ChangeNotifier {
       _errorMessage = 'Gagal menghapus data anggota keluarga: $e';
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Membuat akun auth untuk warga di background agar tidak memblokir loading screen admin
+  Future<void> _createWargaAuthInBackground(String nik) async {
+    final String virtualEmail = '$nik@warga.sigbansos.com';
+    final String virtualPassword = '123456';
+
+    FirebaseApp? tempApp;
+    final String appName = 'TempWargaAuthApp_$nik';
+    try {
+      tempApp = await Firebase.initializeApp(
+        name: appName,
+        options: Firebase.app().options,
+      );
+      final FirebaseAuth tempAuth = FirebaseAuth.instanceFor(app: tempApp);
+      final UserCredential cred = await tempAuth.createUserWithEmailAndPassword(
+        email: virtualEmail,
+        password: virtualPassword,
+      );
+      if (cred.user != null) {
+        await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
+          'email': virtualEmail,
+          'role': 'user',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+      debugPrint('Autocreate Warga Auth Success for NIK: $nik');
+    } on FirebaseAuthException catch (authError) {
+      if (authError.code != 'email-already-in-use') {
+        debugPrint('Autocreate Warga Auth Error for NIK $nik: ${authError.message}');
+      } else {
+        debugPrint('Autocreate Warga Auth: Email already in use for NIK: $nik');
+      }
+    } catch (e) {
+      debugPrint('Autocreate Warga Auth Unexpected Error for NIK $nik: $e');
+    } finally {
+      if (tempApp != null) {
+        try {
+          await tempApp.delete();
+        } catch (e) {
+          debugPrint('Failed to delete temporary Firebase App $appName: $e');
+        }
+      }
     }
   }
 }
