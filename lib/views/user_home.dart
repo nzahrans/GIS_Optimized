@@ -397,35 +397,9 @@ class _UserHomePageState extends State<UserHomePage> {
 
                 BitmapDescriptor? markerIcon;
                 if (isSelected) {
-                  markerIcon = _purpleDotIcon;
-                } else if (data['menerima_bantuan'] == 'Ya') {
-                  final String status = data['status_cair'] ?? 'Belum Menerima';
-                  if (status == 'Dikonfirmasi Warga') {
-                    markerIcon = _greenDotIcon;
-                  } else if (status == 'Sudah Menerima') {
-                    markerIcon = _amberDotIcon;
-                  } else {
-                    markerIcon = _redDotIcon;
-                  }
+                  markerIcon = _purpleDotIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
                 } else {
-                  markerIcon = _blueDotIcon;
-                }
-
-                if (markerIcon == null) {
-                  double markerHue = BitmapDescriptor.hueBlue;
-                  if (isSelected) {
-                    markerHue = BitmapDescriptor.hueViolet;
-                  } else if (data['menerima_bantuan'] == 'Ya') {
-                    final String status = data['status_cair'] ?? 'Belum Menerima';
-                    if (status == 'Dikonfirmasi Warga') {
-                      markerHue = BitmapDescriptor.hueGreen;
-                    } else if (status == 'Sudah Menerima') {
-                      markerHue = BitmapDescriptor.hueOrange;
-                    } else {
-                      markerHue = BitmapDescriptor.hueRed;
-                    }
-                  }
-                  markerIcon = BitmapDescriptor.defaultMarkerWithHue(markerHue);
+                  markerIcon = _blueDotIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
                 }
 
                 markers.add(

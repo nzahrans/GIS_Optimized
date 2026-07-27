@@ -430,14 +430,6 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
           final String noKk = wargaData['no_kk'] ?? '';
           final String fotoUrl = wargaData['foto_url'] ?? '';
 
-          // Masking NIK dan No. KK demi privasi
-          final maskedNik = nik.length == 16
-              ? '${nik.substring(0, 4)}**********${nik.substring(14)}'
-              : nik;
-          final maskedKk = noKk.length == 16
-              ? '${noKk.substring(0, 4)}**********${noKk.substring(14)}'
-              : noKk;
-
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -474,8 +466,8 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                             const SizedBox(height: 4),
                             Text("Blok/Gang: $blok", style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
                             const SizedBox(height: 2),
-                            Text("No. KK: $maskedKk", style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 11)),
-                            Text("NIK: $maskedNik", style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 11)),
+                            Text("No. KK: $noKk", style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 11)),
+                            Text("NIK: $nik", style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 11)),
                           ],
                         ),
                       ),
@@ -507,6 +499,110 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 24),
+
+                // Daftar Anggota Keluarga
+                Text(
+                  "Anggota Keluarga",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirestoreService.getAnggotaStream(wargaDocId),
+                  builder: (context, anggotaSnapshot) {
+                    if (anggotaSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
+                      );
+                    }
+
+                    final anggotaList = anggotaSnapshot.data?.docs ?? [];
+                    if (anggotaList.isEmpty) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.people_outline, color: Colors.blue),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                "Tidak ada anggota keluarga lain yang terdaftar.",
+                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: anggotaList.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final doc = anggotaList[index];
+                        final data = doc.data() as Map<String, dynamic>;
+                        final String nama = data['nama'] ?? '';
+                        final String nikAnggota = data['nik'] ?? '';
+                        final String hub = data['hubungan'] ?? '';
+                        final String jk = data['jenis_kelamin'] ?? '';
+
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: theme.colorScheme.secondary.withOpacity(0.1),
+                                child: Icon(
+                                  jk.toLowerCase() == 'perempuan' ? Icons.woman : Icons.man,
+                                  size: 18,
+                                  color: theme.colorScheme.secondary,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      nama,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      "NIK: $nikAnggota | $hub",
+                                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
 
